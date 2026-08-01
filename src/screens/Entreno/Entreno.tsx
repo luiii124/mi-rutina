@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
 import { ConfirmPanel } from '../../components/ConfirmPanel'
@@ -10,6 +10,7 @@ import { SwipeActions } from '../../components/SwipeActions'
 import { db } from '../../db/schema'
 import type { Exercise, WorkoutExercise } from '../../db/types'
 import { formatearFechaCorta } from '../../domain/dates'
+import { iniciarOContinuarSesion, primerEjercicioPendiente, useUnfinishedSession } from '../../hooks/useSessions'
 import { useWorkout } from '../../hooks/useWorkouts'
 import {
   removeWorkoutExercise,
@@ -19,10 +20,13 @@ import {
 
 export function Entreno() {
   const { workoutId } = useParams()
+  const navigate = useNavigate()
   const workout = useWorkout(workoutId)
   const items = useWorkoutExercises(workoutId ?? '')
+  const sesionActiva = useUnfinishedSession(workoutId)
   const [reordenando, setReordenando] = useState(false)
   const [quitando, setQuitando] = useState<string | null>(null)
+  const [empezando, setEmpezando] = useState(false)
 
   const ultimaSesion = useLiveQuery(async () => {
     if (!workoutId) return null
@@ -31,6 +35,18 @@ export function Entreno() {
   }, [workoutId])
 
   if (!workout || !workoutId) return null
+
+  async function handleEmpezar() {
+    if (!workout) return
+    setEmpezando(true)
+    try {
+      const sessionId = await iniciarOContinuarSesion(workout)
+      const primerId = await primerEjercicioPendiente(sessionId, workout.id)
+      if (primerId) navigate(`/entrenos/${workout.id}/sesion/${sessionId}/${primerId}`)
+    } finally {
+      setEmpezando(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6 px-4 py-8 pb-12">
@@ -90,7 +106,13 @@ export function Entreno() {
                   },
                 ]}
               >
-                <Link to={`/entrenos/${workoutId}/ejercicios/${item.workoutExercise.id}/editar`}>
+                <Link
+                  to={
+                    sesionActiva
+                      ? `/entrenos/${workoutId}/sesion/${sesionActiva.id}/${item.workoutExercise.id}`
+                      : `/entrenos/${workoutId}/ejercicios/${item.workoutExercise.id}/editar`
+                  }
+                >
                   <ExerciseRow index={index} exercise={item.exercise} workoutExercise={item.workoutExercise} />
                 </Link>
               </SwipeActions>
@@ -115,6 +137,21 @@ export function Entreno() {
       <Link to={`/entrenos/${workoutId}/anadir-ejercicio`}>
         <Button variant="secondary">Añadir ejercicio</Button>
       </Link>
+
+      {items && items.length > 0 && (
+        <Button variant="primary" onClick={handleEmpezar} disabled={empezando}>
+          {sesionActiva ? 'Continuar entreno' : 'Empezar entreno'}
+        </Button>
+      )}
+
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <Link to={`/rutinas/${workout.routineId}`}>
+          <Button variant="secondary">Volver a la rutina</Button>
+        </Link>
+        <Link to="/">
+          <Button variant="secondary">Volver a inicio</Button>
+        </Link>
+      </div>
     </div>
   )
 }

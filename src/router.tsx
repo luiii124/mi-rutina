@@ -9,6 +9,7 @@ import { WorkoutForm } from './screens/Entreno/WorkoutForm'
 import { Entreno } from './screens/Entreno/Entreno'
 import { ConfigurarEjercicio } from './screens/Entreno/ConfigurarEjercicio'
 import { AnadirEjercicio } from './screens/AnadirEjercicio/AnadirEjercicio'
+import { EjercicioSesion } from './screens/Sesion/EjercicioSesion'
 import { Debug } from './screens/Debug/Debug'
 
 export const router = createHashRouter([
@@ -31,6 +32,10 @@ export const router = createHashRouter([
       {
         path: '/entrenos/:workoutId/ejercicios/:workoutExerciseId/editar',
         element: <ConfigurarEjercicio />,
+      },
+      {
+        path: '/entrenos/:workoutId/sesion/:sessionId/:workoutExerciseId',
+        element: <EjercicioSesion />,
       },
 
       { path: '/debug', element: <Debug /> },
