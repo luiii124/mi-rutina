@@ -80,57 +80,63 @@ export async function primerEjercicioPendiente(sessionId: string, workoutId: str
   return workoutExercises[workoutExercises.length - 1].id
 }
 
-/** Ver DATA_MODEL.md, "Precarga de la sesion anterior". Idempotente. */
+/**
+ * Ver DATA_MODEL.md, "Precarga de la sesion anterior". Idempotente y segura frente a llamadas
+ * concurrentes: todo ocurre dentro de una unica transaccion para que dos llamadas solapadas
+ * (el efecto de React puede dispararse mas de una vez) no dupliquen series.
+ */
 export async function asegurarSeriesPrecargadas(session: Session, workoutExercise: WorkoutExercise): Promise<void> {
-  const existentes = await db.sessionSets
-    .where('sessionId')
-    .equals(session.id)
-    .filter((s) => s.workoutExerciseId === workoutExercise.id)
-    .toArray()
+  await db.transaction('rw', db.sessionSets, async () => {
+    const existentes = await db.sessionSets
+      .where('sessionId')
+      .equals(session.id)
+      .filter((s) => s.workoutExerciseId === workoutExercise.id)
+      .toArray()
 
-  const indicesExistentes = new Set(existentes.map((s) => s.setIndex))
-  const faltantes: number[] = []
-  for (let i = 0; i < workoutExercise.targetSets; i++) {
-    if (!indicesExistentes.has(i)) faltantes.push(i)
-  }
-  if (faltantes.length === 0) return
-
-  const anteriores = await db.sessionSets
-    .where('workoutExerciseId')
-    .equals(workoutExercise.id)
-    .filter((s) => s.sessionId !== session.id)
-    .toArray()
-
-  let ultimaSesionId: string | null = null
-  let ultimoPerformedAt = -Infinity
-  for (const s of anteriores) {
-    if (s.performedAt > ultimoPerformedAt) {
-      ultimoPerformedAt = s.performedAt
-      ultimaSesionId = s.sessionId
+    const indicesExistentes = new Set(existentes.map((s) => s.setIndex))
+    const faltantes: number[] = []
+    for (let i = 0; i < workoutExercise.targetSets; i++) {
+      if (!indicesExistentes.has(i)) faltantes.push(i)
     }
-  }
-  const previaPorIndice = new Map(
-    (ultimaSesionId ? anteriores.filter((s) => s.sessionId === ultimaSesionId) : []).map((s) => [s.setIndex, s]),
-  )
+    if (faltantes.length === 0) return
 
-  await db.sessionSets.bulkAdd(
-    faltantes.map((setIndex) => {
-      const previa = previaPorIndice.get(setIndex)
-      return {
-        id: crypto.randomUUID(),
-        sessionId: session.id,
-        workoutExerciseId: workoutExercise.id,
-        exerciseId: workoutExercise.exerciseId,
-        routineId: session.routineId,
-        setIndex,
-        weightKg: previa?.weightKg ?? null,
-        reps: previa?.reps ?? null,
-        isCompleted: false,
-        isPrefilled: previa !== undefined,
-        performedAt: session.startedAt,
+    const anteriores = await db.sessionSets
+      .where('workoutExerciseId')
+      .equals(workoutExercise.id)
+      .filter((s) => s.sessionId !== session.id)
+      .toArray()
+
+    let ultimaSesionId: string | null = null
+    let ultimoPerformedAt = -Infinity
+    for (const s of anteriores) {
+      if (s.performedAt > ultimoPerformedAt) {
+        ultimoPerformedAt = s.performedAt
+        ultimaSesionId = s.sessionId
       }
-    }),
-  )
+    }
+    const previaPorIndice = new Map(
+      (ultimaSesionId ? anteriores.filter((s) => s.sessionId === ultimaSesionId) : []).map((s) => [s.setIndex, s]),
+    )
+
+    await db.sessionSets.bulkAdd(
+      faltantes.map((setIndex) => {
+        const previa = previaPorIndice.get(setIndex)
+        return {
+          id: crypto.randomUUID(),
+          sessionId: session.id,
+          workoutExerciseId: workoutExercise.id,
+          exerciseId: workoutExercise.exerciseId,
+          routineId: session.routineId,
+          setIndex,
+          weightKg: previa?.weightKg ?? null,
+          reps: previa?.reps ?? null,
+          isCompleted: false,
+          isPrefilled: previa !== undefined,
+          performedAt: session.startedAt,
+        }
+      }),
+    )
+  })
 }
 
 /** El usuario ha tocado el campo: deja de mostrarse en gris, aunque no cambie el valor. */

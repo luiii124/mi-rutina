@@ -124,7 +124,11 @@ export function EjercicioSesion() {
     if (session && workoutExercise) {
       void asegurarSeriesPrecargadas(session, workoutExercise)
     }
-  }, [session, workoutExercise])
+    // Solo debe repetirse cuando cambia el ejercicio o su numero de series objetivo, no en
+    // cada refresco de la consulta reactiva (session/workoutExercise cambian de referencia
+    // constantemente y relanzarlo en cada uno duplicaba series).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id, workoutExercise?.id, workoutExercise?.targetSets])
 
   if (!workoutId || !sessionId || !workoutExerciseId) return null
   if (!session || !workoutExercise || items === undefined) return null
