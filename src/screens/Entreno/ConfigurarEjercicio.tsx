@@ -35,6 +35,7 @@ export function ConfigurarEjercicio() {
   const [editandoNombre, setEditandoNombre] = useState(false)
   const [note, setNote] = useState('')
   const [targetSets, setTargetSets] = useState(3)
+  const [seriesTexto, setSeriesTexto] = useState('3')
   const [repMin, setRepMin] = useState('')
   const [repMax, setRepMax] = useState('')
   const [restSeconds, setRestSeconds] = useState<number | null>(null)
@@ -44,6 +45,7 @@ export function ConfigurarEjercicio() {
     if (existente) {
       setNote(existente.note ?? '')
       setTargetSets(existente.targetSets)
+      setSeriesTexto(String(existente.targetSets))
       setRepMin(existente.repMin === null ? '' : String(existente.repMin))
       setRepMax(existente.repMax === null ? '' : String(existente.repMax))
       setRestSeconds(existente.restSeconds)
@@ -135,15 +137,21 @@ export function ConfigurarEjercicio() {
         onChange={(e) => setNote(e.target.value)}
       />
 
-      <TextField
-        label="Series"
-        type="number"
-        inputMode="numeric"
-        min={1}
-        max={10}
-        value={targetSets}
-        onChange={(e) => setTargetSets(Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
-      />
+      <div className="flex flex-col gap-2">
+        <span className="text-label uppercase text-text-secondary">Series</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          className={fieldClass}
+          value={seriesTexto}
+          onChange={(e) => setSeriesTexto(e.target.value.replace(/[^0-9]/g, ''))}
+          onBlur={() => {
+            const n = Math.min(10, Math.max(1, Number(seriesTexto) || 1))
+            setTargetSets(n)
+            setSeriesTexto(String(n))
+          }}
+        />
+      </div>
 
       <div className="flex flex-col gap-2">
         <span className="text-label uppercase text-text-secondary">Rango de repeticiones</span>
