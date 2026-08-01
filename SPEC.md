@@ -384,7 +384,8 @@ Sección global e independiente de las rutinas.
   - Debajo: "Última copia: hace 45 días". Si pasan de 30 días, el texto se muestra en rojo.
 - **Almacenamiento**: espacio usado, número de fotos, y un botón "Liberar espacio" que ofrece
   recomprimir las fotos antiguas.
-- **Borrar todos los datos**, con confirmación escribiendo la palabra "BORRAR".
+- **Borrar todos los datos**, con un aviso "¿Estás seguro de que quieres borrar todos los
+  datos?" y los botones **Cancelar** / **Confirmar**.
 - Versión de la app al pie.
 
 ---
