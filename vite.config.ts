@@ -1,11 +1,23 @@
+import { existsSync, readFileSync } from 'node:fs'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const certPath = '.certs/localhost+2.pem'
+const keyPath = '.certs/localhost+2-key.pem'
+const certificadoLocal =
+  existsSync(certPath) && existsSync(keyPath)
+    ? { cert: readFileSync(certPath), key: readFileSync(keyPath) }
+    : undefined
 
 // https://vite.dev/config/
 export default defineConfig({
   test: {
     environment: 'node',
+  },
+  server: {
+    host: true,
+    https: certificadoLocal,
   },
   plugins: [
     react(),

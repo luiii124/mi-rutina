@@ -174,3 +174,5 @@ src/
 - `DESIGN.md` — paleta, tipografía, espaciado y componentes
 - `ROADMAP.md` — fases en orden con criterios de aceptación
 - `RIESGOS.md` — decisiones discutibles y sus alternativas
+- `DESARROLLO.md` — cómo y cuándo desplegar a Netlify, cómo probar en local con HTTPS, y cómo
+  prefiere trabajar el usuario. Léelo antes de hacer `git push`

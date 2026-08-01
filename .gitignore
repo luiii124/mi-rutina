@@ -13,6 +13,9 @@ dist-ssr
 dev-dist
 *.local
 
+# Certificado HTTPS local (mkcert), nunca se sube al repositorio
+.certs
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
