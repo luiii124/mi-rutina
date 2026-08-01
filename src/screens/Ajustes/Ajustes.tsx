@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Button } from '../../components/Button'
 import { ConfirmPanel } from '../../components/ConfirmPanel'
+import { fieldClass } from '../../components/TextField'
 import {
   borrarTodosLosDatos,
   exportarCopia,
@@ -9,24 +10,13 @@ import {
   validarCopia,
   type BackupFile,
 } from '../../db/backup'
+import { diasDesde, formatearFechaCorta } from '../../domain/dates'
 import { updateSettings, useSettings } from '../../hooks/useSettings'
 
-const inputClass =
-  'h-12 w-full rounded-field border-none bg-surface-raised px-3 text-body text-text placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border'
+const inputClass = fieldClass
 
 const REST_PRESETS = [60, 90, 120, 180]
-
-function formatearFecha(timestampMs: number): string {
-  return new Date(timestampMs).toLocaleDateString('es-ES', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function diasDesde(timestampMs: number): number {
-  return Math.floor((Date.now() - timestampMs) / (24 * 60 * 60 * 1000))
-}
+const formatearFecha = formatearFechaCorta
 
 export function Ajustes() {
   const settings = useSettings()
