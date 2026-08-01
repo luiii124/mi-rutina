@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
 import { fieldClass } from '../../components/TextField'
 import type { Exercise } from '../../db/types'
@@ -34,7 +35,10 @@ export function AnadirEjercicio() {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-8 pb-12">
-      <h1 className="text-title text-text">Añadir ejercicio</h1>
+      <div className="flex items-center gap-1">
+        <BackButton fallback={`/entrenos/${workoutId}`} />
+        <h1 className="text-title text-text">Añadir ejercicio</h1>
+      </div>
 
       <input
         type="text"

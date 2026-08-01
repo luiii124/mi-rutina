@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
 import { TagInput } from '../../components/TagInput'
 import { TextField } from '../../components/TextField'
@@ -51,7 +52,10 @@ export function WorkoutForm() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-8 pb-12">
-      <h1 className="text-title text-text">{esEdicion ? 'Editar entreno' : 'Nuevo entreno'}</h1>
+      <div className="flex items-center gap-1">
+        <BackButton fallback={rutinaIdEfectiva ? `/rutinas/${rutinaIdEfectiva}` : '/'} />
+        <h1 className="text-title text-text">{esEdicion ? 'Editar entreno' : 'Nuevo entreno'}</h1>
+      </div>
 
       <TextField
         label="Nombre"

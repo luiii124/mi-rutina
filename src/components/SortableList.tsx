@@ -49,6 +49,7 @@ function SortableItem({ id, children }: { id: string; children: ReactNode }) {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.6 : 1,
+    touchAction: 'none',
   }
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>

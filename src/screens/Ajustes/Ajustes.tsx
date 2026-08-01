@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
 import { ConfirmPanel } from '../../components/ConfirmPanel'
 import { fieldClass } from '../../components/TextField'
@@ -31,7 +32,8 @@ export function Ajustes() {
 
   if (!settings) {
     return (
-      <div className="px-4 py-8">
+      <div className="flex items-center gap-1 px-4 py-8">
+        <BackButton />
         <h1 className="text-title text-text">Ajustes</h1>
       </div>
     )
@@ -94,7 +96,10 @@ export function Ajustes() {
 
   return (
     <div className="flex flex-col gap-8 px-4 py-8 pb-12">
-      <h1 className="text-title text-text">Ajustes</h1>
+      <div className="flex items-center gap-1">
+        <BackButton />
+        <h1 className="text-title text-text">Ajustes</h1>
+      </div>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-label uppercase text-text-secondary">Unidad de peso</h2>

@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
 import { TextAreaField, TextField, fieldClass } from '../../components/TextField'
 import { db } from '../../db/schema'
@@ -97,7 +98,10 @@ export function ConfigurarEjercicio() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-8 pb-12">
-      <h1 className="text-title text-text">Configurar ejercicio</h1>
+      <div className="flex items-center gap-1">
+        <BackButton fallback={`/entrenos/${workoutId}`} />
+        <h1 className="text-title text-text">Configurar ejercicio</h1>
+      </div>
 
       {exercise.isBuiltIn ? (
         <div className="flex flex-col gap-2">

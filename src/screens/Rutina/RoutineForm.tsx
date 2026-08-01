@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
 import { ConfirmPanel } from '../../components/ConfirmPanel'
 import { SegmentedControl } from '../../components/SegmentedControl'
@@ -86,9 +87,12 @@ export function RoutineForm() {
   if (confirmandoReduccion) {
     return (
       <div className="flex flex-col gap-6 px-4 py-8">
-        <h1 className="text-title text-text">
-          {esEdicion ? 'Editar rutina' : 'Nueva rutina'}
-        </h1>
+        <div className="flex items-center gap-1">
+          <BackButton />
+          <h1 className="text-title text-text">
+            {esEdicion ? 'Editar rutina' : 'Nueva rutina'}
+          </h1>
+        </div>
         <ConfirmPanel
           message={`Vas a reducir de ${existente?.variantCount} a ${count} variante${count === 1 ? '' : 's'}. Los entrenos de las variantes eliminadas se borran, pero sus sesiones pasadas se conservan en las gráficas. ¿Continuar?`}
           confirmLabel="Sí, continuar"
@@ -102,7 +106,10 @@ export function RoutineForm() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-8 pb-12">
-      <h1 className="text-title text-text">{esEdicion ? 'Editar rutina' : 'Nueva rutina'}</h1>
+      <div className="flex items-center gap-1">
+        <BackButton />
+        <h1 className="text-title text-text">{esEdicion ? 'Editar rutina' : 'Nueva rutina'}</h1>
+      </div>
 
       <TextField
         label="Nombre"

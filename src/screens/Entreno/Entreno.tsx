@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
 import { ConfirmPanel } from '../../components/ConfirmPanel'
 import { EmptyState } from '../../components/EmptyState'
@@ -35,7 +36,10 @@ export function Entreno() {
     <div className="flex flex-col gap-6 px-4 py-8 pb-12">
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-title text-text">{workout.name}</h1>
+          <div className="flex items-center gap-1">
+            <BackButton fallback={workout.routineId ? `/rutinas/${workout.routineId}` : '/'} />
+            <h1 className="text-title text-text">{workout.name}</h1>
+          </div>
           <Link to={`/entrenos/${workoutId}/editar`} className="text-caption text-text-secondary">
             Editar
           </Link>
