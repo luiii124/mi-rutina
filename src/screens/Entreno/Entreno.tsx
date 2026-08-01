@@ -100,6 +100,10 @@ export function Entreno() {
               <SwipeActions
                 actions={[
                   {
+                    label: 'Editar',
+                    onClick: () => navigate(`/entrenos/${workoutId}/ejercicios/${item.workoutExercise.id}/editar`),
+                  },
+                  {
                     label: 'Quitar',
                     onClick: () => setQuitando(item.workoutExercise.id),
                     destructive: true,

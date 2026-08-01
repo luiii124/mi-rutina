@@ -215,7 +215,15 @@ export function EjercicioSesion() {
           </Link>
         </div>
 
-        <h1 className="text-title text-text">{item.exercise.name}</h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-title text-text">{item.exercise.name}</h1>
+          <Link
+            to={`/entrenos/${workoutId}/ejercicios/${workoutExerciseId}/editar`}
+            className="shrink-0 text-caption text-text-secondary"
+          >
+            Editar
+          </Link>
+        </div>
 
         {workoutExercise.note && (
           <p className={`text-caption text-text-secondary ${notaLarga && !notaExpandida ? 'line-clamp-3' : ''}`}>
