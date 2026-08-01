@@ -280,13 +280,15 @@ export function EjercicioSesion() {
         ) : null}
 
         <div className="flex flex-col items-start gap-1">
-          <button
-            type="button"
-            className="text-caption text-text-secondary underline"
-            onClick={() => session && anadirSerieExtra(session, workoutExercise)}
-          >
-            Añadir serie
-          </button>
+          {!haySiguienteSerie && !descanso.activo && (
+            <button
+              type="button"
+              className="text-caption text-text-secondary underline"
+              onClick={() => session && anadirSerieExtra(session, workoutExercise)}
+            >
+              Añadir serie
+            </button>
+          )}
           {sets && sets.length > workoutExercise.targetSets && (
             <button
               type="button"
