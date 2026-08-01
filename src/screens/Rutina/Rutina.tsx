@@ -43,7 +43,7 @@ export function Rutina() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
-            <BackButton />
+            <BackButton to="/" />
             <h1 className="text-title text-text">{routine.name}</h1>
           </div>
           <Link to={`/rutinas/${routineId}/editar`} className="text-caption text-text-secondary">

@@ -99,7 +99,7 @@ export function ConfigurarEjercicio() {
   return (
     <div className="flex flex-col gap-6 px-4 py-8 pb-12">
       <div className="flex items-center gap-1">
-        <BackButton fallback={`/entrenos/${workoutId}`} />
+        <BackButton to={`/entrenos/${workoutId}`} />
         <h1 className="text-title text-text">Configurar ejercicio</h1>
       </div>
 

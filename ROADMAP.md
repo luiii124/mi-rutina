@@ -86,8 +86,9 @@ mirar la pantalla más de un segundo entre serie y serie.
 
 ## Fase 4 — Temporizador y notas
 
-- Barra del temporizador de descanso, con +30 s, saltar y pausar
-- Vibración al terminar el descanso
+- Temporizador de descanso, con +30 s, saltar y pausar
+- Tono corto al terminar el descanso, generado por la app (sin vibración: decisión explícita
+  del usuario). Una PWA no puede pausar audio de otras apps
 - Descanso por ejercicio, con el valor por defecto de Ajustes como respaldo
 - Nota de sesión
 - El temporizador debe seguir contando bien si la app pasa a segundo plano: guarda el instante

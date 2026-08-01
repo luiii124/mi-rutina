@@ -53,7 +53,7 @@ export function Entreno() {
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
-            <BackButton fallback={workout.routineId ? `/rutinas/${workout.routineId}` : '/'} />
+            <BackButton to={`/rutinas/${workout.routineId}`} />
             <h1 className="text-title text-text">{workout.name}</h1>
           </div>
           <Link to={`/entrenos/${workoutId}/editar`} className="text-caption text-text-secondary">

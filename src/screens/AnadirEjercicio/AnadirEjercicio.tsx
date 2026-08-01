@@ -36,7 +36,7 @@ export function AnadirEjercicio() {
   return (
     <div className="flex flex-col gap-4 px-4 py-8 pb-12">
       <div className="flex items-center gap-1">
-        <BackButton fallback={`/entrenos/${workoutId}`} />
+        <BackButton to={`/entrenos/${workoutId}`} />
         <h1 className="text-title text-text">Añadir ejercicio</h1>
       </div>
 

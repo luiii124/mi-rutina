@@ -238,43 +238,41 @@ poder usarse con el pulgar y sin precisión.
 
 **Estructura de arriba abajo:**
 
-1. **Cabecera fija**: "Ejercicio 3 de 6" en gris pequeño, y a la derecha un botón para salir
-   del entreno. Debajo, el **nombre del ejercicio** en grande.
+1. **Cabecera fija**: a la izquierda "← Anterior" (si no es el primer ejercicio) y "Ejercicio 3
+   de 6" en gris pequeño; a la derecha "Salir", que vuelve al entreno sin terminar la sesión.
+   Debajo, el **nombre del ejercicio** en grande.
 2. **Badge de PR**: si existe, una línea discreta bajo el nombre: "PR 112,5 kg × 3". Es
    pulsable y abre el historial del ejercicio.
 3. **Foto** (si existe): miniatura ancha y baja. Al pulsarla se abre a pantalla completa.
 4. **Nota** (si existe): texto en gris, hasta 3 líneas, con "ver más" si es larga.
-5. **Tabla de series** — el elemento central:
-
-   | Serie | Peso | Reps | ✓ |
-   |---|---|---|---|
-   | 1 | 80 | 10 | ○ |
-   | 2 | 80 | 9 | ○ |
-
-   - La columna "Serie" es solo el número.
-   - "Peso" y "Reps" son campos numéricos grandes. Al pulsarlos se abre el teclado numérico
-     (`inputmode="decimal"` para peso, `inputmode="numeric"` para reps).
-   - La cabecera de la columna Peso muestra la unidad activa: "Peso (kg)".
-   - Si hay rango definido, sobre la tabla se muestra: "Objetivo: 8-12 reps".
+5. **Serie actual** — el elemento central. Se muestra **una sola serie a la vez**, en una
+   tarjeta, no una tabla completa:
+   - Cabecera de la tarjeta: "Serie 2" y, si hay rango definido, "Objetivo: 8-12 reps".
+   - Dos campos numéricos grandes, uno al lado del otro: **Peso (kg o lb, según la unidad
+     activa)** y **Reps** (`inputmode="decimal"` / `"numeric"`).
+   - Precargados en **gris** con el valor de la sesión anterior; en cuanto se tocan pasan a
+     **blanco** y cuentan como valor propio de esta sesión.
    - Un número de repeticiones **fuera del rango se muestra en rojo**, tanto por encima como
      por debajo. Solo el número cambia de color, nada más.
-   - La columna ✓ marca la serie como hecha y arranca el temporizador de descanso.
-   - Botón discreto "Añadir serie" bajo la tabla, para cuando el usuario improvisa una serie
-     extra. La serie añadida solo afecta a esta sesión, no cambia la plantilla, y se muestra
-     un enlace "Guardar también en la rutina" por si quiere que sea permanente.
+   - Bajo la tarjeta, un enlace discreto "Añadir serie" para una extra sobre la marcha (no
+     cambia la plantilla, con "Guardar también en la rutina" para hacerla permanente).
+6. **Barra inferior de tres botones**, respetando la safe area:
+   - **Descanso** — marca la serie actual como hecha y arranca la cuenta atrás con el
+     descanso configurado para este ejercicio (o el de Ajustes por defecto). Al llegar a
+     cero, pasa sola a la siguiente serie.
+   - **Siguiente serie** — marca la serie actual como hecha y pasa a la siguiente sin esperar,
+     para quien no usa el temporizador.
+   - **Siguiente ejercicio** — pasa al ejercicio siguiente sin esperar. En el último ejercicio
+     de la sesión, este tercer botón es **"Terminar entreno"** (destacado en blanco cuando
+     todas las series de todos los ejercicios ya están marcadas).
 
-6. **Temporizador de descanso**: cuando se marca una serie, aparece una barra fina sobre la
-   navegación inferior con la cuenta atrás ("01:23") y botones para +30 s, saltar y pausar. Al
-   llegar a cero vibra el móvil (`navigator.vibrate`) y la barra se pone en blanco un instante.
-   No usar sonido ni notificaciones push en la v1.
+   Mientras cuenta el descanso, la tarjeta de la serie se sustituye por el contador ("01:23")
+   grande y tres controles: **+30 s**, **pausar/reanudar** y **saltar**. Al llegar a cero suena
+   un tono corto generado por la app (sin vibración). Una PWA no puede pausar ni silenciar
+   música u otro audio que esté sonando en segundo plano: es una limitación del navegador, no
+   una decisión de diseño.
 7. **Nota de sesión**: un enlace pequeño "Añadir nota de hoy" que abre un campo de texto. La
    nota es de la sesión completa, no del ejercicio.
-8. **Navegación inferior fija**, respetando la safe area:
-   - Primer ejercicio: solo **"Siguiente ejercicio →"**, ocupando todo el ancho.
-   - Ejercicios intermedios: **"← Anterior"** a la izquierda (más estrecho) y
-     **"Siguiente ejercicio →"** a la derecha (más ancho).
-   - Último ejercicio: **"← Anterior"** y **"Terminar entreno"**. El botón de siguiente no
-     existe, no aparece desactivado.
 
 **Reglas de guardado:**
 
@@ -288,7 +286,9 @@ poder usarse con el pulgar y sin precisión.
   las deja como una serie más: cuentan para el PR y aparecen en la gráfica igual que cualquier
   otra. **Descartar** borra de la base de datos solo esas series concretas (las que seguían sin
   revisar); las demás series de la sesión no se tocan.
-- Un ejercicio se considera **completado** cuando todas sus series están marcadas con ✓.
+- Una serie se marca como **hecha** al pulsar "Descanso" o "Siguiente serie" sobre ella, no con
+  una casilla aparte. Un ejercicio se considera **completado** cuando todas sus series están
+  hechas.
 - Cuando **todos** los ejercicios de la sesión están completados, el entreno se marca como
   completo automáticamente y "Terminar entreno" cambia a un estado destacado.
 

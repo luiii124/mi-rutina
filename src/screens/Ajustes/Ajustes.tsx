@@ -33,7 +33,7 @@ export function Ajustes() {
   if (!settings) {
     return (
       <div className="flex items-center gap-1 px-4 py-8">
-        <BackButton />
+        <BackButton to="/" />
         <h1 className="text-title text-text">Ajustes</h1>
       </div>
     )
@@ -97,7 +97,7 @@ export function Ajustes() {
   return (
     <div className="flex flex-col gap-8 px-4 py-8 pb-12">
       <div className="flex items-center gap-1">
-        <BackButton />
+        <BackButton to="/" />
         <h1 className="text-title text-text">Ajustes</h1>
       </div>
 
