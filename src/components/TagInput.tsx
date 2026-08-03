@@ -40,7 +40,7 @@ export function TagInput({ value, onChange, suggestions = [], placeholder }: Tag
               <button
                 type="button"
                 onClick={() => quitar(tag)}
-                className="text-text-secondary"
+                className="-m-1.5 p-1.5 text-text-secondary"
                 aria-label={`Quitar ${tag}`}
               >
                 ×

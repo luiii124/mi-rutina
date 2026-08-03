@@ -77,14 +77,14 @@ export function PhotoField({ photo, onElegir, onQuitar }: PhotoFieldProps) {
         <div className="flex gap-2">
           <button
             type="button"
-            className="flex-1 rounded-field border border-border bg-surface-raised py-3 text-caption text-text"
+            className="flex h-11 flex-1 items-center justify-center rounded-field border border-border bg-surface-raised text-caption text-text"
             onClick={() => camaraRef.current?.click()}
           >
             Hacer foto
           </button>
           <button
             type="button"
-            className="flex-1 rounded-field border border-border bg-surface-raised py-3 text-caption text-text"
+            className="flex h-11 flex-1 items-center justify-center rounded-field border border-border bg-surface-raised text-caption text-text"
             onClick={() => galeriaRef.current?.click()}
           >
             Elegir de galería

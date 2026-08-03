@@ -35,7 +35,7 @@ export function Inicio() {
         <Link
           to="/ajustes"
           aria-label="Ajustes"
-          className="-mr-2 flex h-9 w-9 items-center justify-center text-text-secondary"
+          className="-mr-3 flex h-11 w-11 items-center justify-center text-text-secondary"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <circle cx="12" cy="12" r="3" />
@@ -85,9 +85,6 @@ export function Inicio() {
       <div className="flex flex-col gap-2 border-t border-border pt-6">
         <Link to="/progreso" className="text-body text-text-secondary">
           Mi progreso
-        </Link>
-        <Link to="/debug" className="text-caption text-text-tertiary">
-          Depuración (dev)
         </Link>
       </div>
     </div>

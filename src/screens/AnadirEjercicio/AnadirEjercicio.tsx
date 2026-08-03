@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
+import { EmptyState } from '../../components/EmptyState'
 import { fieldClass } from '../../components/TextField'
 import type { Exercise } from '../../db/types'
 import { createExercise, encontrarCoincidenciaCasiExacta, useExerciseSearch } from '../../hooks/useExerciseSearch'
@@ -64,6 +65,10 @@ export function AnadirEjercicio() {
             </Button>
           </div>
         </div>
+      )}
+
+      {resultados && resultados.length === 0 && query.trim().length > 0 && (
+        <EmptyState message="Ningún ejercicio coincide con la búsqueda." />
       )}
 
       <div className="flex flex-col gap-2">

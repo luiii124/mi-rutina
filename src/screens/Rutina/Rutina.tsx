@@ -144,7 +144,7 @@ export function Rutina() {
                       <button
                         key={i}
                         type="button"
-                        className="flex-1 rounded-field border border-border py-2 text-caption text-text"
+                        className="flex h-11 flex-1 items-center justify-center rounded-field border border-border text-caption text-text"
                         onClick={() => {
                           duplicateWorkout(workout.id, i)
                           setDuplicando(null)

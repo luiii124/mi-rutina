@@ -15,7 +15,6 @@ import { ConfigurarEjercicio } from './screens/Entreno/ConfigurarEjercicio'
 import { AnadirEjercicio } from './screens/AnadirEjercicio/AnadirEjercicio'
 import { EjercicioSesion } from './screens/Sesion/EjercicioSesion'
 import { Historial } from './screens/Historial/Historial'
-import { Debug } from './screens/Debug/Debug'
 
 export const router = createHashRouter([
   {
@@ -53,7 +52,6 @@ export const router = createHashRouter([
         element: <Historial />,
       },
 
-      { path: '/debug', element: <Debug /> },
     ],
   },
 ])

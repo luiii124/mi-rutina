@@ -206,7 +206,7 @@ export function ConfigurarEjercicio() {
         <button
           type="button"
           onClick={() => setRestSeconds(null)}
-          className={`rounded-field border border-border py-3 text-caption ${
+          className={`flex min-h-11 items-center justify-center rounded-field border border-border py-3 text-center text-caption ${
             restSeconds === null ? 'bg-border text-text' : 'bg-surface-raised text-text-secondary'
           }`}
         >

@@ -37,7 +37,7 @@ export function BodyPhotosField({ fotos, onAñadir, onQuitar, guardando = false 
       <div className="flex gap-2">
         <button
           type="button"
-          className="flex-1 rounded-field border border-border bg-surface-raised py-3 text-caption text-text disabled:opacity-40"
+          className="flex h-11 flex-1 items-center justify-center rounded-field border border-border bg-surface-raised text-caption text-text disabled:opacity-40"
           disabled={guardando}
           onClick={() => camaraRef.current?.click()}
         >
@@ -45,7 +45,7 @@ export function BodyPhotosField({ fotos, onAñadir, onQuitar, guardando = false 
         </button>
         <button
           type="button"
-          className="flex-1 rounded-field border border-border bg-surface-raised py-3 text-caption text-text disabled:opacity-40"
+          className="flex h-11 flex-1 items-center justify-center rounded-field border border-border bg-surface-raised text-caption text-text disabled:opacity-40"
           disabled={guardando}
           onClick={() => galeriaRef.current?.click()}
         >
@@ -86,7 +86,7 @@ function FotoMiniatura({ blob, onQuitar, disabled }: { blob: Blob; onQuitar: () 
         type="button"
         disabled={disabled}
         onClick={onQuitar}
-        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-caption text-white disabled:opacity-40"
+        className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--bg)_70%,transparent)] text-caption text-text disabled:opacity-40"
       >
         ×
       </button>

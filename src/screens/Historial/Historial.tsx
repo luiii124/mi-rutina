@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { BackButton } from '../../components/BackButton'
+import { EmptyState } from '../../components/EmptyState'
 import { SegmentedControl } from '../../components/SegmentedControl'
 import { fieldClass } from '../../components/TextField'
 import { db } from '../../db/schema'
@@ -117,20 +118,20 @@ export function Historial() {
           <div className="h-56 rounded-card bg-surface p-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={puntos} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke="#262626" vertical={false} />
+                <CartesianGrid stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="performedAt"
                   type="number"
                   domain={['dataMin', 'dataMax']}
                   tickFormatter={(v: number) => formatearFechaCorta(v)}
-                  stroke="#4d4d4d"
-                  tick={{ fontSize: 11, fill: '#4d4d4d' }}
+                  stroke="var(--text-tertiary)"
+                  tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }}
                 />
                 <YAxis
                   domain={[0, ticksEjeY[ticksEjeY.length - 1]]}
                   ticks={ticksEjeY}
-                  stroke="#4d4d4d"
-                  tick={{ fontSize: 11, fill: '#4d4d4d' }}
+                  stroke="var(--text-tertiary)"
+                  tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }}
                   width={44}
                 />
                 <Tooltip
@@ -144,7 +145,7 @@ export function Historial() {
                     )
                   }}
                 />
-                <Line type="monotone" dataKey="peso" stroke="#ffffff" strokeWidth={2} dot={{ r: 3, fill: '#ffffff' }} />
+                <Line type="monotone" dataKey="peso" stroke="var(--text)" strokeWidth={2} dot={{ r: 3, fill: 'var(--text)' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -153,12 +154,16 @@ export function Historial() {
 
       <div className="flex flex-col gap-2">
         <span className="text-label uppercase text-text-secondary">Sesiones</span>
-        {sesiones && (
-          <div className="flex flex-col gap-2">
-            {sesiones.map((sesion) => (
-              <FilaSesion key={sesion.sessionId} sesion={sesion} unit={unit} />
-            ))}
-          </div>
+        {sesiones && sesiones.length === 0 ? (
+          <EmptyState message="Todavía no hay sesiones registradas de este ejercicio en esta rutina." />
+        ) : (
+          sesiones && (
+            <div className="flex flex-col gap-2">
+              {sesiones.map((sesion) => (
+                <FilaSesion key={sesion.sessionId} sesion={sesion} unit={unit} />
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>

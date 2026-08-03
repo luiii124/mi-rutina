@@ -319,21 +319,21 @@ export function EjercicioSesion() {
               <button
                 type="button"
                 onClick={descanso.anadir30}
-                className="rounded-field border border-border bg-surface-raised px-4 py-2 text-caption text-text"
+                className="flex h-11 items-center rounded-field border border-border bg-surface-raised px-4 text-caption text-text"
               >
                 +30 s
               </button>
               <button
                 type="button"
                 onClick={descanso.pausado ? descanso.reanudar : descanso.pausar}
-                className="rounded-field border border-border bg-surface-raised px-4 py-2 text-caption text-text"
+                className="flex h-11 items-center rounded-field border border-border bg-surface-raised px-4 text-caption text-text"
               >
                 {descanso.pausado ? 'Reanudar' : 'Pausar'}
               </button>
               <button
                 type="button"
                 onClick={descanso.saltar}
-                className="rounded-field border border-border bg-surface-raised px-4 py-2 text-caption text-text"
+                className="flex h-11 items-center rounded-field border border-border bg-surface-raised px-4 text-caption text-text"
               >
                 Saltar
               </button>

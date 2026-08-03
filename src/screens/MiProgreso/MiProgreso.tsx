@@ -145,20 +145,20 @@ function GraficaMetrica({
       <div className="h-56 rounded-card bg-surface p-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={puntos} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
-            <CartesianGrid stroke="#262626" vertical={false} />
+            <CartesianGrid stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="x"
               type="number"
               domain={['dataMin', 'dataMax']}
               tickFormatter={(v: number) => formatearFechaCorta(v)}
-              stroke="#4d4d4d"
-              tick={{ fontSize: 11, fill: '#4d4d4d' }}
+              stroke="var(--text-tertiary)"
+              tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }}
             />
             <YAxis
               domain={[0, ticksEjeY[ticksEjeY.length - 1]]}
               ticks={ticksEjeY}
-              stroke="#4d4d4d"
-              tick={{ fontSize: 11, fill: '#4d4d4d' }}
+              stroke="var(--text-tertiary)"
+              tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }}
               width={44}
             />
             <Tooltip
@@ -176,15 +176,15 @@ function GraficaMetrica({
               <ReferenceLine
                 key={`${t.routineId}-inicio`}
                 x={t.inicio}
-                stroke="#4d4d4d"
+                stroke="var(--text-tertiary)"
                 strokeDasharray="3 3"
-                label={{ value: t.name, position: 'insideTopLeft', fontSize: 10, fill: '#8a8a8a' }}
+                label={{ value: t.name, position: 'insideTopLeft', fontSize: 10, fill: 'var(--text-secondary)' }}
               />
             ))}
             {tramos.map((t) => (
-              <ReferenceLine key={`${t.routineId}-fin`} x={t.fin} stroke="#4d4d4d" strokeDasharray="3 3" />
+              <ReferenceLine key={`${t.routineId}-fin`} x={t.fin} stroke="var(--text-tertiary)" strokeDasharray="3 3" />
             ))}
-            <Line type="monotone" dataKey="y" stroke="#ffffff" strokeWidth={2} dot={{ r: 3, fill: '#ffffff' }} />
+            <Line type="monotone" dataKey="y" stroke="var(--text)" strokeWidth={2} dot={{ r: 3, fill: 'var(--text)' }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
