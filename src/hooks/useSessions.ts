@@ -18,6 +18,23 @@ export function useSession(sessionId: string | undefined): Session | undefined {
   return useLiveQuery(() => (sessionId ? db.sessions.get(sessionId) : undefined), [sessionId])
 }
 
+/**
+ * La sesion completada mas reciente de este entreno. Se usa para mostrar "Notas de la ultima
+ * sesion": al no guardar mas que la ultima, si esa sesion no tuvo nota, no se muestra nada.
+ */
+export function useLastCompletedSession(workoutId: string | undefined): Session | null | undefined {
+  return useLiveQuery(async () => {
+    if (!workoutId) return null
+    const sesiones = await db.sessions
+      .where('workoutId')
+      .equals(workoutId)
+      .filter((s) => s.completedAt !== null)
+      .toArray()
+    if (sesiones.length === 0) return null
+    return sesiones.sort((a, b) => (b.completedAt as number) - (a.completedAt as number))[0]
+  }, [workoutId])
+}
+
 export function useSessionSets(
   sessionId: string | undefined,
   workoutExerciseId: string | undefined,
@@ -149,10 +166,10 @@ export async function actualizarSerie(
   changes: { weightKg: number | null; reps: number | null },
 ): Promise<void> {
   await db.sessionSets.update(setId, { ...changes, isPrefilled: false })
-  if (changes.weightKg !== null && changes.reps) {
-    const set = await db.sessionSets.get(setId)
-    if (set) await recalcularPR(set.exerciseId)
-  }
+  // Siempre se recalcula, incluso si el cambio deja la serie incompleta: si esta serie era el
+  // PR y se borra el peso o las reps, el PR debe dejar de contarla (ver DATA_MODEL.md).
+  const set = await db.sessionSets.get(setId)
+  if (set) await recalcularPR(set.exerciseId)
 }
 
 export async function marcarSerieCompletada(setId: string, completed: boolean): Promise<void> {
@@ -188,6 +205,10 @@ export async function guardarSerieExtraEnRutina(workoutExercise: WorkoutExercise
     targetSets: workoutExercise.targetSets + 1,
     updatedAt: Date.now(),
   })
+}
+
+export async function actualizarNotaSesion(sessionId: string, note: string): Promise<void> {
+  await db.sessions.update(sessionId, { note: note.trim() ? note : null })
 }
 
 export async function resumenSeriesSinRevisar(sessionId: string): Promise<{ total: number; sinRevisar: number }> {

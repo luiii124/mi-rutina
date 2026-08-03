@@ -46,6 +46,31 @@ export function useRoutine(routineId: string | undefined): Routine | undefined {
   return useLiveQuery(() => (routineId ? db.routines.get(routineId) : undefined), [routineId])
 }
 
+export interface TramoRutina {
+  routineId: string
+  name: string
+  inicio: number
+  fin: number
+}
+
+/** Tramo activo de cada rutina con sesiones, para las marcas verticales de "Mi progreso". Ver DATA_MODEL.md. */
+export function useTramosDeRutinas(): TramoRutina[] | undefined {
+  return useLiveQuery(async () => {
+    const routines = await db.routines.toArray()
+    const tramos: TramoRutina[] = []
+
+    for (const routine of routines) {
+      const sessions = await db.sessions.where('routineId').equals(routine.id).toArray()
+      if (sessions.length === 0) continue
+      const inicio = Math.min(...sessions.map((s) => s.startedAt))
+      const fin = routine.archivedAt ?? Math.max(...sessions.map((s) => s.startedAt))
+      tramos.push({ routineId: routine.id, name: routine.name, inicio, fin })
+    }
+
+    return tramos.sort((a, b) => a.inicio - b.inicio)
+  }, [])
+}
+
 export async function createRoutine(name: string, variantCount: 1 | 2 | 3 | 4): Promise<string> {
   const now = Date.now()
   const id = crypto.randomUUID()

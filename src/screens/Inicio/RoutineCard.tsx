@@ -50,8 +50,11 @@ export function RoutineCard({
           )}
         </div>
         <span className="text-caption text-text-secondary">
-          Creada el {formatearFechaCorta(routine.createdAt)}
-          {lastSessionAt !== null && ` · Última sesión ${formatearFechaRelativa(lastSessionAt)}`}
+          {archivada && routine.archivedAt !== null
+            ? `Terminada el ${formatearFechaCorta(routine.archivedAt)}`
+            : `Creada el ${formatearFechaCorta(routine.createdAt)}${
+                lastSessionAt !== null ? ` · Última sesión ${formatearFechaRelativa(lastSessionAt)}` : ''
+              }`}
         </span>
       </Link>
     </SwipeActions>

@@ -2,14 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../../components/Button'
 import { ConfirmPanel } from '../../components/ConfirmPanel'
-import { fieldClass } from '../../components/TextField'
-import type { SessionSet } from '../../db/types'
+import { PhotoThumbnail } from '../../components/PhotoThumbnail'
+import { PhotoViewer } from '../../components/PhotoViewer'
+import { fieldClass, TextAreaField } from '../../components/TextField'
+import type { Session, SessionSet } from '../../db/types'
 import { estaFueraDeRango } from '../../domain/repRange'
 import { formatearTiempo } from '../../domain/timer'
 import { formatWeightForDisplay, parseWeightInput } from '../../domain/units'
+import { borrarDescansoGuardado, guardarDescanso, leerDescansoGuardado } from '../../lib/restTimerStorage'
 import { prepararSonido, reproducirTonoFinDescanso } from '../../lib/sound'
+import { usePersonalRecord } from '../../hooks/useHistory'
+import { usePhoto } from '../../hooks/usePhotos'
 import { useSettings } from '../../hooks/useSettings'
 import {
+  actualizarNotaSesion,
   actualizarSerie,
   anadirSerieExtra,
   asegurarSeriesPrecargadas,
@@ -24,12 +30,28 @@ import {
 } from '../../hooks/useSessions'
 import { useWorkoutExercise, useWorkoutExercises } from '../../hooks/useWorkoutExercises'
 
-function useDescanso(onFin: () => void) {
+function useDescanso(onFin: () => void, workoutExerciseId: string) {
   const [finEn, setFinEn] = useState<number | null>(null)
   const [pausadoRestante, setPausadoRestante] = useState<number | null>(null)
   const [ahora, setAhora] = useState(() => Date.now())
   const onFinRef = useRef(onFin)
   onFinRef.current = onFin
+
+  // Recupera un descanso en marcha si Safari ha descargado la pagina de la memoria al bloquear
+  // el movil: no solo la pausa, la recarga entera y se pierde todo el estado en memoria.
+  const restauradoRef = useRef(false)
+  useEffect(() => {
+    if (restauradoRef.current || !workoutExerciseId) return
+    restauradoRef.current = true
+    const guardado = leerDescansoGuardado(workoutExerciseId)
+    if (guardado === null) return
+    if (guardado > Date.now()) {
+      setFinEn(guardado)
+    } else {
+      borrarDescansoGuardado()
+      onFinRef.current()
+    }
+  }, [workoutExerciseId])
 
   useEffect(() => {
     if (finEn === null || pausadoRestante !== null) return
@@ -50,6 +72,7 @@ function useDescanso(onFin: () => void) {
   useEffect(() => {
     if (finEn !== null && pausadoRestante === null && restante === 0) {
       setFinEn(null)
+      borrarDescansoGuardado()
       onFinRef.current()
     }
   }, [restante, finEn, pausadoRestante])
@@ -60,29 +83,40 @@ function useDescanso(onFin: () => void) {
     pausado: pausadoRestante !== null,
     iniciar(segundos: number) {
       setPausadoRestante(null)
-      setFinEn(Date.now() + segundos * 1000)
+      const fin = Date.now() + segundos * 1000
+      setFinEn(fin)
+      guardarDescanso(workoutExerciseId, fin)
     },
     pausar() {
       if (finEn === null) return
       setPausadoRestante(Math.max(0, Math.ceil((finEn - Date.now()) / 1000)))
+      borrarDescansoGuardado()
     },
     reanudar() {
       if (pausadoRestante === null) return
-      setFinEn(Date.now() + pausadoRestante * 1000)
+      const fin = Date.now() + pausadoRestante * 1000
+      setFinEn(fin)
       setPausadoRestante(null)
+      guardarDescanso(workoutExerciseId, fin)
     },
     anadir30() {
       if (pausadoRestante !== null) setPausadoRestante(pausadoRestante + 30)
-      else if (finEn !== null) setFinEn(finEn + 30000)
+      else if (finEn !== null) {
+        const fin = finEn + 30000
+        setFinEn(fin)
+        guardarDescanso(workoutExerciseId, fin)
+      }
     },
     saltar() {
       setFinEn(null)
       setPausadoRestante(null)
+      borrarDescansoGuardado()
       onFinRef.current()
     },
     cancelar() {
       setFinEn(null)
       setPausadoRestante(null)
+      borrarDescansoGuardado()
     },
   }
 }
@@ -97,6 +131,10 @@ export function EjercicioSesion() {
   const workoutExercise = useWorkoutExercise(workoutExerciseId)
   const sets = useSessionSets(sessionId, workoutExerciseId)
   const todosCompletados = useTodosCompletados(sessionId, workoutId)
+  const pr = usePersonalRecord(workoutExercise?.exerciseId)
+  const itemActual = items?.find((i) => i.workoutExercise.id === workoutExerciseId)
+  const foto = usePhoto(itemActual?.exercise.photoId)
+  const [viendoFoto, setViendoFoto] = useState(false)
 
   const [serieIndex, setSerieIndex] = useState<number | null>(null)
   const [notaExpandida, setNotaExpandida] = useState(false)
@@ -106,19 +144,30 @@ export function EjercicioSesion() {
   const descanso = useDescanso(() => {
     reproducirTonoFinDescanso()
     setSerieIndex((i) => (sets && i !== null && i < sets.length - 1 ? i + 1 : i))
-  })
+  }, workoutExerciseId ?? '')
 
+  const primerMontajeRef = useRef(true)
   useEffect(() => {
+    // Se salta la primera ejecucion: si la pagina se acaba de recargar (Safari la descarga de
+    // la memoria al bloquear el movil), este efecto no debe cancelar el descanso que el hook
+    // de arriba acaba de restaurar desde el almacenamiento.
+    if (primerMontajeRef.current) {
+      primerMontajeRef.current = false
+      return
+    }
     setSerieIndex(null)
     descanso.cancelar()
   }, [workoutExerciseId]) // eslint-disable-line react-hooks/exhaustive-deps -- descanso se recrea cada render, no es una dependencia real
 
   useEffect(() => {
-    if (serieIndex === null && sets && sets.length > 0) {
+    // useSessionSets (useLiveQuery) mantiene los sets del ejercicio anterior mientras carga los
+    // nuevos: hay que comprobar que de verdad son de este ejercicio antes de fijar la serie
+    // inicial, o se hereda por error la serie en la que se quedo el ejercicio anterior.
+    if (serieIndex === null && sets && sets.length > 0 && sets[0].workoutExerciseId === workoutExerciseId) {
       const primerPendiente = sets.findIndex((s) => !s.isCompleted)
       setSerieIndex(primerPendiente === -1 ? sets.length - 1 : primerPendiente)
     }
-  }, [serieIndex, sets])
+  }, [serieIndex, sets, workoutExerciseId])
 
   useEffect(() => {
     if (session && workoutExercise) {
@@ -147,6 +196,10 @@ export function EjercicioSesion() {
 
   function avanzar() {
     setSerieIndex((i) => (sets && i !== null && i < sets.length - 1 ? i + 1 : i))
+  }
+
+  function retroceder() {
+    setSerieIndex((i) => (i !== null && i > 0 ? i - 1 : i))
   }
 
   function handleDescanso() {
@@ -229,6 +282,24 @@ export function EjercicioSesion() {
           </Link>
         </div>
 
+        <Link
+          to={`/entrenos/${workoutId}/sesion/${sessionId}/${workoutExerciseId}/historial`}
+          className={`self-start text-caption underline ${
+            pr && pr.sessionId === session.id ? 'text-text' : 'text-text-secondary'
+          }`}
+        >
+          {pr ? `PR ${formatWeightForDisplay(pr.weightKg, unit)} ${unit} × ${pr.reps}` : 'Historial'}
+        </Link>
+
+        {foto && (
+          <PhotoThumbnail
+            photo={foto}
+            className="h-28 w-full rounded-card bg-surface-raised object-contain"
+            onClick={() => setViendoFoto(true)}
+          />
+        )}
+        {foto && viendoFoto && <PhotoViewer photo={foto} onClose={() => setViendoFoto(false)} />}
+
         {workoutExercise.note && (
           <p className={`text-caption text-text-secondary ${notaLarga && !notaExpandida ? 'line-clamp-3' : ''}`}>
             {workoutExercise.note}
@@ -284,6 +355,15 @@ export function EjercicioSesion() {
         ) : null}
 
         <div className="flex flex-col items-start gap-1">
+          {serieIndex !== null && serieIndex > 0 && !descanso.activo && (
+            <button
+              type="button"
+              className="text-caption text-text-secondary underline"
+              onClick={retroceder}
+            >
+              Serie anterior
+            </button>
+          )}
           {!haySiguienteSerie && !descanso.activo && (
             <button
               type="button"
@@ -304,10 +384,12 @@ export function EjercicioSesion() {
           )}
         </div>
 
+        <NotaDeSesion session={session} />
+
         {confirmandoRevision && (
           <ConfirmPanel
             message="Hay series que no has revisado. ¿Las guardo tal cual o las descarto?"
-            cancelLabel="Guardar tal cual"
+            cancelLabel="Guardar"
             confirmLabel="Descartar"
             onCancel={() => resolverRevision(false)}
             onConfirm={() => resolverRevision(true)}
@@ -354,6 +436,37 @@ export function EjercicioSesion() {
   )
 }
 
+function NotaDeSesion({ session }: { session: Session }) {
+  const [abierta, setAbierta] = useState(false)
+  const [texto, setTexto] = useState(session.note ?? '')
+
+  useEffect(() => {
+    setTexto(session.note ?? '')
+  }, [session.id, session.note])
+
+  if (!abierta && !session.note) {
+    return (
+      <button
+        type="button"
+        className="self-start text-caption text-text-secondary underline"
+        onClick={() => setAbierta(true)}
+      >
+        Añadir nota de hoy
+      </button>
+    )
+  }
+
+  return (
+    <TextAreaField
+      label="Nota de hoy"
+      value={texto}
+      autoFocus={abierta && !session.note}
+      onChange={(e) => setTexto(e.target.value)}
+      onBlur={() => void actualizarNotaSesion(session.id, texto)}
+    />
+  )
+}
+
 function SerieCampos({
   set,
   unit,
@@ -373,7 +486,14 @@ function SerieCampos({
     setReps(set.reps !== null ? String(set.reps) : '')
   }, [set.id, set.weightKg, set.reps, unit])
 
-  const fueraDeRango = estaFueraDeRango(set.reps, repMin, repMax)
+  // Se calcula sobre lo que hay escrito en el campo, no sobre el ultimo valor guardado: si no,
+  // el numero no se pinta de rojo hasta salir del campo (cuando se guarda de verdad).
+  const repsEnPantalla = reps.trim() ? Number(reps.replace(',', '.')) : null
+  const fueraDeRango = estaFueraDeRango(
+    repsEnPantalla !== null && !Number.isNaN(repsEnPantalla) ? repsEnPantalla : null,
+    repMin,
+    repMax,
+  )
 
   function guardar(pesoTexto: string, repsTexto: string) {
     const pesoNum = pesoTexto.trim() ? Number(pesoTexto.replace(',', '.')) : null
@@ -404,7 +524,7 @@ function SerieCampos({
           type="text"
           inputMode="numeric"
           className={`${fieldClass} h-16 text-center text-numeric ${
-            fueraDeRango ? 'text-alert' : set.isPrefilled ? 'text-text-tertiary' : 'text-text'
+            fueraDeRango ? '!text-alert' : set.isPrefilled ? 'text-text-tertiary' : 'text-text'
           }`}
           value={reps}
           onFocus={() => set.isPrefilled && void marcarSerieComoRevisada(set.id)}

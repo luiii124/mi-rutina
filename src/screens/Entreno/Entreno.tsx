@@ -5,12 +5,19 @@ import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
 import { ConfirmPanel } from '../../components/ConfirmPanel'
 import { EmptyState } from '../../components/EmptyState'
+import { PhotoThumbnail } from '../../components/PhotoThumbnail'
 import { SortableList } from '../../components/SortableList'
 import { SwipeActions } from '../../components/SwipeActions'
 import { db } from '../../db/schema'
 import type { Exercise, WorkoutExercise } from '../../db/types'
 import { formatearFechaCorta } from '../../domain/dates'
-import { iniciarOContinuarSesion, primerEjercicioPendiente, useUnfinishedSession } from '../../hooks/useSessions'
+import {
+  iniciarOContinuarSesion,
+  primerEjercicioPendiente,
+  useLastCompletedSession,
+  useUnfinishedSession,
+} from '../../hooks/useSessions'
+import { usePhoto } from '../../hooks/usePhotos'
 import { useWorkout } from '../../hooks/useWorkouts'
 import {
   removeWorkoutExercise,
@@ -24,6 +31,7 @@ export function Entreno() {
   const workout = useWorkout(workoutId)
   const items = useWorkoutExercises(workoutId ?? '')
   const sesionActiva = useUnfinishedSession(workoutId)
+  const ultimaSesionCompletada = useLastCompletedSession(workoutId)
   const [reordenando, setReordenando] = useState(false)
   const [quitando, setQuitando] = useState<string | null>(null)
   const [empezando, setEmpezando] = useState(false)
@@ -68,6 +76,13 @@ export function Entreno() {
           {ultimaSesion ? ` · Última sesión: ${formatearFechaCorta(ultimaSesion)}` : ''}
         </p>
       </div>
+
+      {ultimaSesionCompletada?.note && (
+        <div className="flex flex-col gap-1 rounded-card bg-surface p-4">
+          <span className="text-label uppercase text-text-secondary">Notas de la última sesión</span>
+          <p className="text-caption text-text-secondary">{ultimaSesionCompletada.note}</p>
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <span className="text-label uppercase text-text-secondary">Ejercicios</span>
@@ -173,6 +188,7 @@ function ExerciseRow({
     workoutExercise.repMin !== null && workoutExercise.repMax !== null
       ? `${workoutExercise.repMin}-${workoutExercise.repMax} reps`
       : null
+  const foto = usePhoto(exercise.photoId)
 
   return (
     <div className="flex items-center justify-between gap-2 rounded-card bg-surface p-4">
@@ -184,6 +200,7 @@ function ExerciseRow({
           {workoutExercise.targetSets} series{rango ? ` · ${rango}` : ''}
         </span>
       </div>
+      {foto && <PhotoThumbnail photo={foto} className="h-12 w-12 shrink-0 rounded-field object-cover" />}
     </div>
   )
 }

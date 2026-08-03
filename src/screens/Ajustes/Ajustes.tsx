@@ -12,6 +12,7 @@ import {
   type BackupFile,
 } from '../../db/backup'
 import { diasDesde, formatearFechaCorta } from '../../domain/dates'
+import { recomprimirFotosAntiguas, useEstadoAlmacenamiento } from '../../hooks/usePhotos'
 import { updateSettings, useSettings } from '../../hooks/useSettings'
 
 const inputClass = fieldClass
@@ -29,6 +30,9 @@ export function Ajustes() {
   const [exportando, setExportando] = useState(false)
   const [importando, setImportando] = useState(false)
   const [borrando, setBorrando] = useState(false)
+  const [liberando, setLiberando] = useState(false)
+  const [espacioLiberado, setEspacioLiberado] = useState<number | null>(null)
+  const almacenamiento = useEstadoAlmacenamiento()
 
   if (!settings) {
     return (
@@ -79,6 +83,17 @@ export function Ajustes() {
       setConfirmandoImport(false)
     } finally {
       setImportando(false)
+    }
+  }
+
+  async function handleLiberarEspacio() {
+    setLiberando(true)
+    setEspacioLiberado(null)
+    try {
+      const bytes = await recomprimirFotosAntiguas()
+      setEspacioLiberado(bytes)
+    } finally {
+      setLiberando(false)
     }
   }
 
@@ -205,6 +220,27 @@ export function Ajustes() {
             ? `Ultima copia: hace ${diasSinCopia} dia${diasSinCopia === 1 ? '' : 's'}`
             : 'Todavia no has hecho ninguna copia'}
         </p>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-label uppercase text-text-secondary">Almacenamiento</h2>
+        <p className="text-caption text-text-secondary">
+          {almacenamiento
+            ? `${(almacenamiento.bytes / (1024 * 1024)).toFixed(1)} MB usados en ${almacenamiento.numFotos} foto${
+                almacenamiento.numFotos === 1 ? '' : 's'
+              }`
+            : 'Calculando...'}
+        </p>
+        <Button variant="secondary" onClick={handleLiberarEspacio} disabled={liberando}>
+          {liberando ? 'Liberando...' : 'Liberar espacio'}
+        </Button>
+        {espacioLiberado !== null && (
+          <p className="text-caption text-text-secondary">
+            {espacioLiberado > 0
+              ? `Se han liberado ${(espacioLiberado / (1024 * 1024)).toFixed(1)} MB`
+              : 'No había fotos antiguas que recomprimir'}
+          </p>
+        )}
       </section>
 
       <section className="flex flex-col gap-3">

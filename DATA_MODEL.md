@@ -1,24 +1,22 @@
 # Mi Rutina — Modelo de datos
 
-Base de datos: **IndexedDB** a través de **Dexie.js**. Todo local, en el dispositivo.
+BD: **IndexedDB** vía **Dexie.js**. Todo local, en el dispositivo.
 
 ## Principios innegociables
 
-1. **Los pesos se guardan siempre en kilogramos**, como número decimal. La unidad del usuario
-   es solo presentación.
-2. **Las sesiones son inmutables por defecto.** Se crean, no se sobrescriben. Solo se modifican
-   si el usuario edita explícitamente una sesión pasada.
-3. **Separación entre plantilla y registro.** `WorkoutExercise` es la plantilla (qué pienso
-   hacer). `SessionSet` es el registro (qué hice de verdad). Nunca mezcles las dos.
-4. **Los identificadores son UUID v4 en texto**, no autoincrementales. Así la importación de
-   copias de seguridad no genera colisiones.
-5. **Toda entidad lleva `createdAt` y `updatedAt`** en milisegundos epoch (UTC).
+1. **Pesos siempre en kilogramos** (decimal). La unidad del usuario es solo presentación.
+2. **Sesiones inmutables por defecto.** Se crean, no se sobrescriben, salvo edición explícita
+   de una sesión pasada.
+3. **Plantilla vs. registro, separados.** `WorkoutExercise` = plantilla (qué pienso hacer).
+   `SessionSet` = registro (qué hice de verdad). No mezclar.
+4. **IDs = UUID v4 en texto**, no autoincrementales, para que importar copias no colisione.
+5. **Toda entidad lleva `createdAt`/`updatedAt`** en ms epoch (UTC).
 
 ---
 
 ## Entidades
 
-### `Settings` — una sola fila, id fijo `"settings"`
+### `Settings` — fila única, id fijo `"settings"`
 
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -28,26 +26,20 @@ Base de datos: **IndexedDB** a través de **Dexie.js**. Todo local, en el dispos
 | `lastBackupAt` | `number \| null` | epoch ms |
 | `schemaVersion` | `number` | para migraciones |
 
----
-
-### `Exercise` — catálogo global de ejercicios
-
-Compartido entre todas las rutinas. Aquí vive la identidad del ejercicio.
+### `Exercise` — catálogo global, compartido entre rutinas
 
 | Campo | Tipo | Notas |
 |---|---|---|
 | `id` | `string` | uuid |
 | `name` | `string` | "Press banca" |
 | `nameNormalized` | `string` | minúsculas sin acentos, **indexado**, para el buscador |
-| `muscleGroup` | `string \| null` | "Pecho", "Espalda"... solo informativo |
+| `muscleGroup` | `string \| null` | solo informativo |
 | `photoId` | `string \| null` | referencia a `Photo` |
-| `isBuiltIn` | `boolean` | `true` para el catálogo base |
-| `usageCount` | `number` | veces que se ha añadido a un entreno, para ordenar la búsqueda |
+| `isBuiltIn` | `boolean` | `true` = catálogo base |
+| `usageCount` | `number` | veces añadido a un entreno, para ordenar la búsqueda |
 | `createdAt` / `updatedAt` | `number` | |
 
 Índices: `id`, `nameNormalized`, `isBuiltIn`.
-
----
 
 ### `Routine` — rutina
 
@@ -55,17 +47,15 @@ Compartido entre todas las rutinas. Aquí vive la identidad del ejercicio.
 |---|---|---|
 | `id` | `string` | uuid |
 | `name` | `string` | |
-| `variantCount` | `1 \| 2 \| 3 \| 4` | `1` significa sin variantes |
-| `variantNames` | `string[]` | longitud = `variantCount`. Por defecto `["A","B",...]` |
-| `currentVariantIndex` | `number` | 0-based. La variante **sugerida** por la app |
-| `manualVariantIndex` | `number \| null` | si el usuario la fijó a mano; `null` = automático |
+| `variantCount` | `1\|2\|3\|4` | `1` = sin variantes |
+| `variantNames` | `string[]` | longitud = `variantCount`, por defecto `["A","B",...]` |
+| `currentVariantIndex` | `number` | 0-based, variante **sugerida** |
+| `manualVariantIndex` | `number \| null` | fijada a mano; `null` = automático |
 | `cycleCompletedWorkoutIds` | `string[]` | entrenos ya hechos del ciclo actual |
 | `createdAt` / `updatedAt` | `number` | |
-| `archivedAt` | `number \| null` | para "terminar" una rutina sin borrarla |
+| `archivedAt` | `number \| null` | "terminar" rutina sin borrarla |
 
----
-
-### `Workout` — entreno (un día de la rutina)
+### `Workout` — entreno (día de la rutina)
 
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -73,15 +63,13 @@ Compartido entre todas las rutinas. Aquí vive la identidad del ejercicio.
 | `routineId` | `string` | **indexado** |
 | `variantIndex` | `number` | 0-based |
 | `name` | `string` | "Espalda" |
-| `materials` | `string[]` | `["Straps", "Cinturón"]` |
-| `order` | `number` | posición dentro de su variante |
+| `materials` | `string[]` | `["Straps","Cinturón"]` |
+| `order` | `number` | posición en su variante |
 | `createdAt` / `updatedAt` | `number` | `updatedAt` = último cambio de **estructura** |
 
 Índice compuesto: `[routineId+variantIndex]`.
 
----
-
-### `WorkoutExercise` — plantilla del ejercicio dentro de un entreno
+### `WorkoutExercise` — plantilla del ejercicio en un entreno
 
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -91,54 +79,43 @@ Compartido entre todas las rutinas. Aquí vive la identidad del ejercicio.
 | `order` | `number` | |
 | `note` | `string \| null` | propia de este entreno |
 | `targetSets` | `number` | 1-10 |
-| `repMin` | `number \| null` | `null` = sin control de rango |
-| `repMax` | `number \| null` | |
+| `repMin` / `repMax` | `number \| null` | `null` = sin control de rango |
 | `restSeconds` | `number \| null` | `null` = usa el valor por defecto de Ajustes |
 | `createdAt` / `updatedAt` | `number` | |
 
----
-
-### `Session` — un entreno realizado un día concreto
+### `Session` — entreno realizado un día concreto
 
 | Campo | Tipo | Notas |
 |---|---|---|
 | `id` | `string` | uuid |
 | `routineId` | `string` | **indexado**, desnormalizado a propósito |
 | `workoutId` | `string` | **indexado** |
-| `variantIndex` | `number` | copia del momento, por si luego cambia |
+| `variantIndex` | `number` | copia del momento, por si cambia después |
 | `startedAt` | `number` | epoch ms |
-| `completedAt` | `number \| null` | `null` = sesión sin terminar |
+| `completedAt` | `number \| null` | `null` = sin terminar |
 | `note` | `string \| null` | nota de la sesión completa |
 
-Índice compuesto: `[workoutId+startedAt]`.
+Índice compuesto: `[workoutId+startedAt]`. `routineId` se guarda aunque sea deducible desde
+`workoutId`: las gráficas filtran por rutina y ahorra un salto de consulta.
 
-`routineId` se guarda aunque sea deducible desde `workoutId`. Es deliberado: las gráficas
-filtran por rutina y hacerlo con un salto menos de consulta compensa.
-
----
-
-### `SessionSet` — una serie registrada
-
-La tabla que más crece. Es donde vive todo el historial real.
+### `SessionSet` — una serie registrada (la tabla que más crece)
 
 | Campo | Tipo | Notas |
 |---|---|---|
 | `id` | `string` | uuid |
 | `sessionId` | `string` | **indexado** |
 | `workoutExerciseId` | `string` | **indexado** |
-| `exerciseId` | `string` | **indexado**, desnormalizado para el PR y las gráficas |
-| `routineId` | `string` | **indexado**, desnormalizado para las gráficas por rutina |
+| `exerciseId` | `string` | **indexado**, desnormalizado para PR/gráficas |
+| `routineId` | `string` | **indexado**, desnormalizado para gráficas por rutina |
 | `setIndex` | `number` | 0-based |
 | `weightKg` | `number \| null` | **siempre en kg** |
 | `reps` | `number \| null` | |
 | `isCompleted` | `boolean` | la marca ✓ |
-| `isPrefilled` | `boolean` | `true` mientras el usuario no lo haya tocado |
+| `isPrefilled` | `boolean` | `true` mientras no la toque el usuario |
 | `performedAt` | `number` | copia de `session.startedAt`, para ordenar sin join |
 
-Índice compuesto: `[exerciseId+performedAt]` — es la consulta más frecuente de toda la app
-(historial y gráfica de un ejercicio). Y `[exerciseId+routineId]` para la gráfica por rutina.
-
----
+Índices compuestos: `[exerciseId+performedAt]` (consulta más frecuente: historial/gráfica de
+un ejercicio) y `[exerciseId+routineId]` (gráfica por rutina).
 
 ### `BodyEntry` — registro corporal
 
@@ -146,16 +123,13 @@ La tabla que más crece. Es donde vive todo el historial real.
 |---|---|---|
 | `id` | `string` | uuid |
 | `date` | `string` | `YYYY-MM-DD`, **único e indexado** |
-| `weightKg` | `number \| null` | |
-| `bodyFatPct` | `number \| null` | |
+| `weightKg` / `bodyFatPct` | `number \| null` | |
 | `photoIds` | `string[]` | |
 | `note` | `string \| null` | |
 | `createdAt` / `updatedAt` | `number` | |
 
-`date` es texto `YYYY-MM-DD` y no un timestamp: evita que un registro se mueva de día al
-cambiar de zona horaria o con el horario de verano.
-
----
+`date` es texto, no timestamp: evita que el registro salte de día por cambio de zona
+horaria/horario de verano.
 
 ### `Photo` — imágenes
 
@@ -165,44 +139,32 @@ cambiar de zona horaria o con el horario de verano.
 | `blob` | `Blob` | JPEG comprimido |
 | `width` / `height` | `number` | |
 | `bytes` | `number` | para la pantalla de almacenamiento |
-| `kind` | `'exercise' \| 'body'` | |
+| `kind` | `'exercise'\|'body'` | |
 | `createdAt` | `number` | |
 
-**Reglas de compresión, obligatorias:**
-
-- Antes de guardar, redimensionar con `canvas` para que el lado mayor sea **1280 px** como
-  máximo, y exportar a JPEG con calidad **0,75**.
-- Una foto de iPhone sin comprimir ocupa 3-5 MB. Comprimida, unos 150-250 KB. Sin esta regla,
-  veinte fotos de ejercicios llenan la cuota de IndexedDB de Safari y la app deja de guardar.
-- Al mostrar la miniatura, usar `URL.createObjectURL` y **liberar el objeto** con
-  `URL.revokeObjectURL` al desmontar el componente. Si no, hay fuga de memoria.
-
----
+**Compresión obligatoria:** redimensionar con `canvas` a máx. **1280 px** en el lado mayor,
+JPEG calidad **0,75**. Sin comprimir, una foto de iPhone pesa 3-5 MB (comprimida, 150-250 KB);
+20 fotos sin comprimir llenarían la cuota de IndexedDB de Safari. Al mostrar miniatura, usar
+`URL.createObjectURL` y `URL.revokeObjectURL` al desmontar (si no, fuga de memoria).
 
 ### `PersonalRecord` — caché del PR
 
-Es una caché derivada de `SessionSet`. Se puede reconstruir entera desde cero en cualquier
-momento; existe solo por velocidad.
+Derivada de `SessionSet`, reconstruible desde cero en cualquier momento; existe solo por
+velocidad.
 
 | Campo | Tipo | Notas |
 |---|---|---|
 | `exerciseId` | `string` | clave primaria |
-| `weightKg` | `number` | el peso más alto jamás levantado |
-| `reps` | `number` | repeticiones de esa misma serie |
-| `sessionId` | `string` | dónde ocurrió |
-| `routineId` | `string` | |
+| `weightKg` | `number` | peso más alto jamás levantado |
+| `reps` | `number` | reps de esa misma serie |
+| `sessionId` / `routineId` | `string` | dónde ocurrió |
 | `achievedAt` | `number` | |
 
-**Cuándo se actualiza:**
-
-- Al guardar una serie con peso y repeticiones: si `weightKg` supera el PR actual, se
-  reemplaza.
-- **Empate a peso**: gana la serie con **más repeticiones**. Si también empatan, se conserva
-  el registro más antiguo (el PR original).
-- Al **editar** una sesión pasada o al **borrar** una rutina, el PR de los ejercicios afectados
-  se **recalcula desde cero** consultando todas sus `SessionSet`. No intentes ajustarlo de
-  forma incremental: es una fuente segura de errores.
-- Una serie con `weightKg` a `null` o `reps` a 0 nunca cuenta para el PR.
+**Actualización:** al guardar una serie con peso+reps, si `weightKg` supera el PR, se
+reemplaza. **Empate a peso**: gana más repeticiones; si también empatan, se conserva el
+registro más antiguo. Al **editar** una sesión pasada o **borrar** una rutina, el PR afectado
+se **recalcula desde cero** sobre todas sus `SessionSet` (nunca ajustar incrementalmente).
+Serie con `weightKg` null o `reps` 0 nunca cuenta.
 
 ---
 
@@ -215,57 +177,49 @@ kgToLb(kg) = kg * 2.20462262185
 lbToKg(lb) = lb / 2.20462262185
 ```
 
-- Al **mostrar** en libras: redondear a 0,5 lb.
-- Al **mostrar** en kilos: redondear a 0,5 kg (o a 0,25 si el valor lo requiere).
-- Al **introducir** en libras: convertir a kg y guardar el valor completo, **sin redondear**.
-  Redondear al guardar hace que el valor se degrade cada vez que se cambia de unidad.
-- El campo acepta tanto coma como punto decimal.
+- Mostrar en libras: redondear a 0,5 lb. Mostrar en kilos: redondear a 0,5 kg (0,25 si hace
+  falta).
+- Introducir en libras: convertir a kg y guardar **sin redondear** (redondear al guardar
+  degrada el valor en cada cambio de unidad).
+- El campo acepta coma o punto decimal.
 
 ### Repeticiones fuera de rango
 
 ```
 estaFueraDeRango(reps, repMin, repMax):
-    si repMin es null o repMax es null → false
-    si reps es null o reps == 0 → false
+    si repMin o repMax es null → false
+    si reps es null o 0 → false
     devolver reps < repMin o reps > repMax
 ```
 
-Toda la interfaz llama a **esta única función**. Cambiar la política (por ejemplo, que pasarse
-del rango deje de ser rojo) debe ser modificar solo esta función.
+Toda la interfaz llama a **esta única función**. Cambiar la política es modificar solo esto.
 
 ### Avance automático de variante
 
-Solo aplica si `routine.variantCount > 1`.
+Solo si `routine.variantCount > 1`.
 
 ```
 alCompletarSesión(sesión):
     rutina = rutina de la sesión
     si rutina.variantCount == 1 → salir
-
-    si sesión.workoutId no está en rutina.cycleCompletedWorkoutIds:
-        añadirlo
-
-    entrenosDeLaVariante = entrenos de la rutina con variantIndex == rutina.currentVariantIndex
-
-    si todos los ids de entrenosDeLaVariante están en cycleCompletedWorkoutIds:
-        rutina.currentVariantIndex = (rutina.currentVariantIndex + 1) % rutina.variantCount
-        rutina.cycleCompletedWorkoutIds = []
-        rutina.manualVariantIndex = null
+    si sesión.workoutId no está en cycleCompletedWorkoutIds → añadirlo
+    entrenosDeLaVariante = entrenos con variantIndex == currentVariantIndex
+    si todos sus ids están en cycleCompletedWorkoutIds:
+        currentVariantIndex = (currentVariantIndex + 1) % variantCount
+        cycleCompletedWorkoutIds = []
+        manualVariantIndex = null
 ```
 
-**Variante mostrada** = `manualVariantIndex ?? currentVariantIndex`.
+Variante mostrada = `manualVariantIndex ?? currentVariantIndex`. Elegir una a mano fija
+`manualVariantIndex` y muestra "Has cambiado la variante a mano"; "Volver a la sugerida" lo
+pone a `null`.
 
-Cuando el usuario elige una variante a mano, se guarda en `manualVariantIndex` y se muestra el
-aviso "Has cambiado la variante a mano". Pulsar "Volver a la sugerida" pone `manualVariantIndex`
-a `null`.
+**Por qué por entrenos y no por fechas:** contar semanas naturales se desincroniza en cuanto se
+descansa una semana, hay viaje o se entrena en desorden (lo normal). Contar entrenos
+completados sigue el ritmo real.
 
-**Por qué así y no por fechas:** contar semanas naturales se desincroniza en cuanto el usuario
-descansa una semana, se va de viaje o entrena en desorden — que es lo normal. Contar entrenos
-completados sigue el ritmo real de la persona.
-
-**Caso límite:** si se añade un entreno nuevo a la variante en curso cuando el ciclo ya estaba
-casi completo, ese entreno queda pendiente y el ciclo simplemente tarda más en cerrarse. Es el
-comportamiento correcto.
+**Caso límite:** añadir un entreno nuevo a la variante en curso cuando el ciclo casi había
+cerrado deja ese entreno pendiente y el ciclo tarda más en cerrar — es correcto.
 
 ### Precarga de la sesión anterior
 
@@ -273,66 +227,53 @@ Al abrir un ejercicio en modo sesión:
 
 ```
 paraCadaSerie i de 0 a targetSets-1:
-    si ya existe un SessionSet de esta sesión con setIndex == i → usarlo
+    si ya existe SessionSet de esta sesión con setIndex==i → usarlo
     si no:
         buscar la última sesión anterior de este workoutExerciseId
-        si existe y tiene una serie con setIndex == i:
-            crear SessionSet con su weightKg y reps, isPrefilled = true
-        si no:
-            crear SessionSet vacío, isPrefilled = false
+        si tiene serie con setIndex==i → crear SessionSet con su weightKg/reps, isPrefilled=true
+        si no → crear SessionSet vacío, isPrefilled=false
 ```
 
-Cuando el usuario modifica un campo, `isPrefilled` pasa a `false`. La interfaz pinta en gris
-las series con `isPrefilled = true` y en blanco las demás.
+Al modificar un campo, `isPrefilled` pasa a `false`. La interfaz pinta en gris las series con
+`isPrefilled=true`, en blanco las demás.
 
 ### Datos de la gráfica de un ejercicio
 
 ```
 puntosDeLaGráfica(exerciseId, routineId, desde, hasta):
-    series = SessionSet donde exerciseId coincide
-                          y routineId coincide
-                          y performedAt entre desde y hasta
-                          y weightKg no es null
-    agrupar por día de performedAt
-    por cada grupo:
-        punto = { fecha, pesoMáximo, repsDeEsaSerie }
+    series = SessionSet con exerciseId, routineId, performedAt en rango, weightKg != null
+    agrupar por día → { fecha, pesoMáximo, repsDeEsaSerie }
     ordenar por fecha ascendente
 ```
 
-Si un ejercicio se repite dos veces el mismo día (dos sesiones), se agrupan en un solo punto
-con el peso máximo del día.
+Si el ejercicio se repite el mismo día (dos sesiones), se agrupan en un punto con el peso
+máximo del día.
 
 ### Tramo activo de una rutina
 
-Necesario para dibujar las marcas verticales de la pantalla "Mi progreso". No se guarda como
-campo: se calcula.
+Para las marcas verticales de "Mi progreso". No se guarda, se calcula:
 
 ```
 tramoDeLaRutina(routineId):
-    inicio = startedAt de la sesión más antigua de esa rutina
-    fin    = archivedAt si no es null
-             en otro caso, startedAt de la sesión más reciente
-    si no hay ninguna sesión → la rutina no se dibuja
+    inicio = startedAt de la sesión más antigua
+    fin = archivedAt si existe, si no startedAt de la sesión más reciente
+    sin sesiones → la rutina no se dibuja
 ```
 
-Una rutina se marca como archivada (`archivedAt`) desde el menú de la rutina, con la opción
-"Terminar rutina". Una rutina archivada baja al final de la lista de Inicio, se muestra con el
-nombre en `--text-secondary` y no se puede empezar un entreno desde ella hasta reactivarla.
-Su historial y sus gráficas siguen intactos.
+Una rutina archivada (`archivedAt`, vía "Terminar rutina") baja al final de Inicio, nombre en
+`--text-secondary`, no se puede entrenar hasta reactivar. Historial y gráficas intactos.
 
 ### Sugerencias de materiales
 
-No hay tabla de materiales. Al escribir en el campo, se consultan todos los `Workout` de la
-base de datos, se aplanan sus arrays `materials`, se eliminan duplicados sin distinguir
-mayúsculas y se filtran por lo escrito. Con decenas de entrenos es instantáneo y evita una
-tabla más que mantener sincronizada.
+Sin tabla de materiales: al escribir, se consultan todos los `Workout`, se aplanan sus
+`materials`, se deduplican sin distinguir mayúsculas y se filtran por lo escrito. Instantáneo
+con decenas de entrenos, evita una tabla más que sincronizar.
 
 ---
 
 ## Catálogo base de ejercicios
 
-Al primer arranque se siembran ejercicios con `isBuiltIn = true`. Unos 60, agrupados por
-músculo, con nombres en español:
+Sembrado al primer arranque, `isBuiltIn = true`, ~60 en español por grupo muscular:
 
 - **Pecho**: press banca, press inclinado con barra, press inclinado con mancuernas, press
   plano con mancuernas, aperturas en polea, aperturas en máquina, fondos en paralelas, press
@@ -350,8 +291,8 @@ músculo, con nombres en español:
   cuádriceps, hip thrust, abductores, aductores, gemelo de pie, gemelo sentado
 - **Core**: plancha, elevaciones de piernas, rueda abdominal, crunch en polea
 
-El usuario **no puede editar ni borrar** los del catálogo base, pero sí crear una copia con
-otro nombre. Los que crea él llevan `isBuiltIn = false` y son totalmente editables.
+El usuario no puede editar ni borrar el catálogo base, solo crear una copia con otro nombre.
+Los suyos llevan `isBuiltIn = false` y son totalmente editables.
 
 ---
 
@@ -378,22 +319,19 @@ otro nombre. Los que crea él llevan `isBuiltIn = false` y son totalmente editab
 
 **Reglas:**
 
-- Las fotos van en base64 dentro del mismo archivo. Es un archivo grande (varios MB) pero
-  autocontenido, y eso es lo que importa.
-- Al importar: validar `app` y `schemaVersion`, mostrar un resumen del contenido, y solo
-  entonces **borrar todo y sustituir**. Nunca fusionar: fusionar duplicaría sesiones y sería
-  imposible de deshacer.
-- Antes de sustituir, la app genera una copia automática de los datos actuales en IndexedDB,
-  bajo una clave aparte, recuperable durante 7 días.
-- El nombre del archivo incluye la fecha: `mi-rutina-2026-08-01.json`.
+- Fotos en base64 dentro del mismo archivo: pesa varios MB pero es autocontenido.
+- Al importar: validar `app`/`schemaVersion`, mostrar resumen, y solo entonces **borrar todo y
+  sustituir**. Nunca fusionar (duplicaría sesiones, imposible de deshacer).
+- Antes de sustituir, se genera copia automática de los datos actuales bajo clave aparte en
+  IndexedDB, recuperable 7 días.
+- Nombre de archivo con fecha: `mi-rutina-2026-08-01.json`.
 
 ---
 
 ## Migraciones
 
-Dexie versiona el esquema. Cada cambio incrementa la versión y añade un bloque
+Dexie versiona el esquema: cada cambio incrementa la versión y añade
 `.version(n).stores({...}).upgrade(tx => {...})`.
 
-**Nunca** cambies el significado de un campo existente. Si un campo necesita otra semántica,
-crea uno nuevo y migra los datos. Un usuario con seis meses de historial no puede perderlo por
-un cambio de esquema.
+**Nunca** cambiar el significado de un campo existente — crear uno nuevo y migrar los datos. Un
+usuario con seis meses de historial no puede perderlo por un cambio de esquema.

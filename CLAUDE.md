@@ -1,41 +1,36 @@
 # Mi Rutina — Contexto del proyecto
 
-Este archivo es la fuente de verdad permanente. Léelo entero antes de tocar código.
-Si algo aquí contradice a otro documento, gana este archivo.
+Fuente de verdad permanente. Léelo entero antes de tocar código. Si contradice a otro
+documento, gana este archivo.
 
 ---
 
 ## Qué es
 
-App de entrenamiento personal para el gimnasio. El usuario crea rutinas, define los
-entrenos de cada rutina (torso, espalda, pierna...), los ejercicios de cada entreno, y
-durante la sesión va anotando el peso y las repeticiones de cada serie. La app guarda
-todas las sesiones anteriores para mostrar la progresión en gráficas y el récord personal
-de cada ejercicio.
+App de entrenamiento personal para gimnasio: rutinas → entrenos (torso, espalda, pierna...) →
+ejercicios. En sesión se anota peso y reps de cada serie. Guarda todo el historial para
+gráficas de progresión y PR por ejercicio.
 
-Es una app de un solo usuario, sin cuentas, sin servidor y sin conexión a internet.
+Un solo usuario, sin cuentas, sin servidor, sin internet.
 
 ---
 
 ## Formato: PWA instalable
 
-Se construye como **Progressive Web App**: una aplicación web que el usuario añade a la
-pantalla de inicio de su iPhone desde Safari y que a partir de ahí se comporta como una app
-nativa (icono propio, pantalla completa sin barra de navegador, funciona sin internet).
+Se construye como **Progressive Web App**: web que el usuario añade a la pantalla de inicio
+del iPhone desde Safari y se comporta como app nativa (icono propio, pantalla completa, sin
+internet). Motivo: el usuario desarrolla en Windows, no tiene Mac, no puede compilar iOS
+nativo — la PWA es la única vía instalable sin Mac ni coste.
 
-Motivo: el usuario desarrolla en Windows y no tiene Mac, por lo que no puede compilar una app
-iOS nativa. La PWA es la única vía que da una app instalable en iPhone sin Mac ni coste.
+**Implicaciones permanentes:**
 
-**Implicaciones que debes respetar siempre:**
-
-- El objetivo de dispositivo es **iPhone en Safari, en modo standalone**. Todo se prueba
-  pensando en pantalla de 390×844 px. No hay que optimizar para escritorio, pero la app no
-  debe romperse en pantallas anchas: se centra con un ancho máximo de 480 px.
-- Debe funcionar **100% sin internet** después de la primera carga.
-- **Nunca** introduzcas dependencias de red en tiempo de ejecución: nada de fuentes de Google
-  Fonts, CDNs, APIs externas, analytics ni telemetría. Todo se empaqueta.
-- Respeta las *safe areas* de iOS (`env(safe-area-inset-*)`), sobre todo abajo, donde va la
-  barra de navegación del ejercicio.
+- Dispositivo objetivo: **iPhone/Safari en modo standalone**, pensado para 390×844 px. No
+  optimizar para escritorio, pero no romper en pantallas anchas (centrado, máx. 480 px).
+- 100% funcional **sin internet** tras la primera carga.
+- **Cero dependencias de red en runtime**: nada de Google Fonts, CDNs, APIs externas,
+  analytics, telemetría. Todo empaquetado.
+- Respetar *safe areas* de iOS (`env(safe-area-inset-*)`), sobre todo abajo (barra del
+  ejercicio).
 
 ---
 
@@ -44,109 +39,85 @@ iOS nativa. La PWA es la única vía que da una app instalable en iPhone sin Mac
 | Pieza | Elección | Por qué |
 |---|---|---|
 | Build | Vite | Rápido, config mínima, soporte PWA maduro |
-| Lenguaje | TypeScript, modo `strict` | El modelo de datos tiene bastantes relaciones; sin tipos se rompe |
+| Lenguaje | TypeScript `strict` | Modelo de datos con muchas relaciones; sin tipos se rompe |
 | UI | React 18 | |
-| Estilos | Tailwind CSS | Paleta y espaciado consistentes sin CSS suelto |
-| Rutas | React Router (`createHashRouter`) | Hash routing evita problemas de rutas en standalone y en hosting estático |
-| Base de datos | Dexie.js sobre IndexedDB | Necesitamos guardar blobs de fotos y consultar historial por ejercicio |
-| Gráficas | Recharts | Integración natural con React, suficiente para una gráfica de líneas |
-| PWA | `vite-plugin-pwa` (Workbox) | Genera manifest y service worker |
-| Reordenar | `@dnd-kit/core` + `@dnd-kit/sortable` | Arrastrar y soltar entrenos y ejercicios (Fase 2 y 3), ligera y sin llamadas de red |
-| Tests | Vitest | Solo para la lógica pura (ver abajo) |
+| Estilos | Tailwind CSS | Paleta/espaciado consistentes |
+| Rutas | React Router (`createHashRouter`) | Evita problemas de rutas en standalone y hosting estático |
+| BD | Dexie.js sobre IndexedDB | Blobs de fotos + consultas de historial por ejercicio |
+| Gráficas | Recharts | Integración con React, suficiente para líneas |
+| PWA | `vite-plugin-pwa` (Workbox) | Manifest + service worker |
+| Reordenar | `@dnd-kit/core` + `@dnd-kit/sortable` | Drag&drop de entrenos/ejercicios, sin red |
+| Tests | Vitest | Solo lógica pura |
 
-No añadas librerías fuera de esta lista sin justificarlo primero. En concreto: nada de
-librerías de estado global (Redux, Zustand, Jotai) — Dexie con `useLiveQuery` ya da
-reactividad sobre la base de datos y es suficiente.
+No añadir librerías fuera de esta lista sin justificar. En concreto: nada de estado global
+(Redux/Zustand/Jotai) — Dexie + `useLiveQuery` ya da reactividad y basta.
 
 ---
 
-## Decisiones cerradas
+## Decisiones cerradas — no replantear ni proponer alternativas
 
-Estas ya están discutidas con el usuario. **No las replantees ni propongas alternativas.**
-
-1. **Solo modo oscuro.** Fondo negro, textos y elementos en blanco y grises. No hay color de
-   acento. El **único** color de toda la app es el rojo, y se reserva exclusivamente para las
-   repeticiones fuera del rango objetivo.
-2. **Repeticiones fuera de rango en rojo, por arriba y por abajo.** Si el rango es 8-12, tanto
-   6 como 14 se pintan en rojo. (Ver nota en `RIESGOS.md`: está aislado en una sola función
-   para poder cambiarlo fácil.)
-3. **Unidad global**, kg o lb, configurable en Ajustes. Internamente **todo se almacena
-   siempre en kilogramos**; la conversión ocurre solo al mostrar y al introducir.
-4. **PR = el peso más alto jamás levantado en ese ejercicio**, mostrado junto a las
-   repeticiones de esa serie (ej. "112,5 kg × 3"). El PR es **universal**: se calcula sobre
-   todas las sesiones de todas las rutinas.
-5. **Las gráficas están separadas por rutina.** Eje horizontal: fechas de las sesiones. Eje
-   vertical: peso máximo de ese ejercicio en esa sesión.
-6. **Los ejercicios se comparten entre rutinas** (mismo nombre, misma foto, mismo PR, mismo
-   historial), pero la **nota, el número de series y el rango de repeticiones son propios de
-   cada rutina**.
-7. **Las medidas corporales (peso, % de grasa, fotos) son globales**, en su propia sección
-   "Mi progreso". No cuelgan de ninguna rutina.
-8. **Al abrir un ejercicio en sesión, los campos vienen precargados con la última sesión**,
-   en gris, y el usuario los sobrescribe.
-9. **Las variantes de rutina avanzan automáticamente**, con posibilidad de corregir la
-   variante a mano desde la cabecera de la rutina.
-10. **Entra en la v1**: temporizador de descanso, notas rápidas de sesión, marcar ejercicio
-    como completado (y el entreno se marca solo cuando todos lo están).
+1. **Solo modo oscuro**: negro/blanco/grises. Único color de la app: rojo, solo para reps
+   fuera de rango.
+2. **Reps fuera de rango en rojo por arriba y por abajo** (rango 8-12 → 6 y 14 ambos rojos).
+   Aislado en una función (ver `RIESGOS.md`) para poder cambiarlo fácil.
+3. **Unidad global** kg/lb en Ajustes. Se **almacena siempre en kg**; conversión solo al
+   mostrar/introducir.
+4. **PR = peso más alto jamás levantado** en ese ejercicio, con sus reps ("112,5 kg × 3").
+   **Universal**: sobre todas las rutinas y sesiones.
+5. **Gráficas separadas por rutina**. Eje X: fechas de sesión. Eje Y: peso máximo de ese
+   ejercicio en esa sesión.
+6. **Ejercicios compartidos entre rutinas** (nombre, foto, PR, historial), pero **nota, nº de
+   series y rango de reps son propios de cada rutina**.
+7. **Medidas corporales (peso, % grasa, fotos) son globales**, en "Mi progreso", no cuelgan de
+   ninguna rutina.
+8. **Ejercicio en sesión precarga la última sesión** en gris; el usuario sobrescribe.
+9. **Variantes avanzan automáticamente**, corregible a mano desde la cabecera de rutina.
+10. **En la v1**: temporizador de descanso, notas rápidas de sesión, marcar ejercicio
+    completado (entreno se marca solo cuando todos lo están).
 
 ---
 
 ## Reglas de trabajo
 
-**Antes de empezar cualquier fase:** lee `ROADMAP.md` y confirma en qué fase estás. Construye
-las fases **en orden**. No adelantes trabajo de fases posteriores aunque parezca fácil.
-
-**Al terminar cada fase:** para, resume qué has hecho y espera confirmación del usuario antes
-de seguir. El usuario quiere probar en el móvil entre fase y fase.
-
-**Cuando algo no esté especificado:** pregunta antes de inventar. Es preferible una pregunta a
-una funcionalidad que hay que rehacer. Si es una decisión menor de implementación (nombre de
-una variable, estructura de una carpeta), decide tú y sigue.
-
-**Tests:** escribe tests con Vitest **solo** para lógica pura y crítica:
-
-- conversión kg ↔ lb (ida y vuelta sin pérdida)
-- cálculo del PR de un ejercicio
-- detección de repeticiones fuera de rango
-- lógica de avance automático de variante
-
-No escribas tests de componentes ni end-to-end. No aportan aquí y ralentizan.
-
-**Commits:** uno por unidad de trabajo coherente, mensaje en español, imperativo y corto.
-Ejemplo: `Añade temporizador de descanso configurable por ejercicio`.
+- **Antes de cada fase**: leer `ROADMAP.md`, confirmar la fase actual. Construir en **orden**,
+  sin adelantar trabajo de fases posteriores.
+- **Al terminar cada fase**: parar, resumir, esperar confirmación — el usuario prueba en el
+  móvil entre fases.
+- **Si algo no está especificado**: preguntar antes de inventar (mejor una pregunta que rehacer
+  trabajo). Decisiones menores de implementación (nombre de variable, estructura de carpeta):
+  decidir y seguir.
+- **Tests** (Vitest, solo lógica pura y crítica): conversión kg↔lb, cálculo de PR, detección de
+  reps fuera de rango, avance automático de variante. Nada de tests de componentes ni e2e.
+- **Commits**: uno por unidad coherente, mensaje en español, imperativo y corto (ej. "Añade
+  temporizador de descanso configurable por ejercicio").
 
 ---
 
-## Lo que NO debes hacer
+## Qué NO hacer
 
-- No añadas login, registro, cuentas ni nada que requiera servidor.
-- No añadas sincronización en la nube, backend ni base de datos remota.
-- No añadas anuncios, suscripciones, paywalls ni analítica.
-- No añadas funciones "que estaría bien tener" que no estén en `SPEC.md`. Si se te ocurre
-  algo, apúntalo en la lista de ideas al final de `ROADMAP.md` y sigue.
-- No uses `localStorage` para los datos de entrenamiento. Solo IndexedDB (Dexie). `localStorage`
-  únicamente para preferencias triviales de interfaz si hiciera falta.
-- No conviertas pesos a libras en la base de datos. Nunca. Se guarda en kg.
-- No borres ni sobrescribas sesiones históricas. Los datos pasados son inmutables salvo que el
-  usuario edite explícitamente una sesión concreta.
-- No uses emojis en la interfaz.
+- Login, registro, cuentas, nada que requiera servidor.
+- Sincronización en la nube, backend, BD remota.
+- Anuncios, suscripciones, paywalls, analítica.
+- Funciones "estaría bien tener" fuera de `SPEC.md` — anotarlas en la lista de ideas al final
+  de `ROADMAP.md` y seguir.
+- `localStorage` para datos de entrenamiento (solo IndexedDB/Dexie; `localStorage` solo para
+  preferencias triviales de UI si hiciera falta).
+- Convertir pesos a libras en la base de datos — siempre en kg.
+- Borrar/sobrescribir sesiones históricas — inmutables salvo edición explícita del usuario.
+- Emojis en la interfaz.
 
 ---
 
-## Riesgo crítico que debes tener presente siempre
+## Riesgo crítico permanente
 
-En iOS, Safari **puede borrar los datos de una PWA** si el usuario no la abre durante unas
-semanas. Esto no es hipotético.
+iOS Safari **puede borrar los datos de una PWA** si no se abre durante semanas. No es
+hipotético. Mitigaciones obligatorias (Fase 1):
 
-Mitigaciones obligatorias, ambas en la Fase 1:
+1. `navigator.storage.persist()` en el primer arranque.
+2. Exportar/importar copia de seguridad en JSON (fotos incluidas en base64), guardable en
+   Archivos/iCloud Drive.
 
-1. Llamar a `navigator.storage.persist()` en el primer arranque (reduce mucho la probabilidad
-   de purga).
-2. Implementar **exportar / importar copia de seguridad** en JSON, con las fotos incluidas en
-   base64. El usuario debe poder guardar ese archivo en Archivos o iCloud Drive.
-
-Además, cuando hayan pasado más de 30 días desde la última copia, la pantalla de Ajustes
-muestra un aviso discreto recordándolo. Sin ventanas emergentes agresivas.
+Pasados 30 días sin copia, Ajustes muestra un aviso discreto (sin popups agresivos).
 
 ---
 
@@ -163,16 +134,16 @@ src/
   pwa/          manifest, iconos, registro del service worker
 ```
 
-`domain/` no debe importar nada de React ni de Dexie. Es lógica pura y testeable.
+`domain/` no importa React ni Dexie: lógica pura y testeable.
 
 ---
 
 ## Documentos del proyecto
 
-- `SPEC.md` — qué hace la app, pantalla a pantalla, con las reglas y los casos límite
-- `DATA_MODEL.md` — entidades, campos, relaciones y algoritmos
-- `DESIGN.md` — paleta, tipografía, espaciado y componentes
+- `SPEC.md` — qué hace la app, pantalla a pantalla, reglas y casos límite
+- `DATA_MODEL.md` — entidades, campos, relaciones, algoritmos
+- `DESIGN.md` — paleta, tipografía, espaciado, componentes
 - `ROADMAP.md` — fases en orden con criterios de aceptación
-- `RIESGOS.md` — decisiones discutibles y sus alternativas
-- `DESARROLLO.md` — cómo y cuándo desplegar a Netlify, cómo probar en local con HTTPS, y cómo
-  prefiere trabajar el usuario. Léelo antes de hacer `git push`
+- `RIESGOS.md` — decisiones discutibles y alternativas
+- `DESARROLLO.md` — cuándo desplegar a Netlify, cómo probar en local con HTTPS, cómo prefiere
+  trabajar el usuario. Léelo antes de `git push`

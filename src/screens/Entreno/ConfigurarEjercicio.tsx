@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { BackButton } from '../../components/BackButton'
 import { Button } from '../../components/Button'
+import { PhotoField } from '../../components/PhotoField'
 import { TextAreaField, TextField, fieldClass } from '../../components/TextField'
 import { db } from '../../db/schema'
 import { createExercise } from '../../hooks/useExerciseSearch'
+import { eliminarFotoEjercicio, guardarFotoEjercicio, usePhoto } from '../../hooks/usePhotos'
 import { useSettings } from '../../hooks/useSettings'
 import {
   addExerciseToWorkout,
@@ -30,6 +32,7 @@ export function ConfigurarEjercicio() {
     () => (exerciseId ? db.exercises.get(exerciseId) : undefined),
     [exerciseId],
   )
+  const foto = usePhoto(exercise?.photoId)
 
   const [nombreEditado, setNombreEditado] = useState('')
   const [editandoNombre, setEditandoNombre] = useState(false)
@@ -129,6 +132,12 @@ export function ConfigurarEjercicio() {
       ) : (
         <TextField label="Nombre del ejercicio" value={nombreEditado} disabled className="opacity-60" />
       )}
+
+      <PhotoField
+        photo={foto}
+        onElegir={(archivo) => guardarFotoEjercicio(exercise.id, archivo)}
+        onQuitar={() => eliminarFotoEjercicio(exercise.id)}
+      />
 
       <TextAreaField
         label="Nota"
