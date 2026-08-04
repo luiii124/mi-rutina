@@ -199,6 +199,7 @@ function ExerciseRow({
         <span className="text-caption text-text-secondary">
           {workoutExercise.targetSets} series{rango ? ` · ${rango}` : ''}
         </span>
+        {workoutExercise.note && <span className="text-caption text-text-secondary">{workoutExercise.note}</span>}
       </div>
       {foto && <PhotoThumbnail photo={foto} className="h-12 w-12 shrink-0 rounded-field object-cover" />}
     </div>

@@ -61,6 +61,7 @@ export function TagInput({ value, onChange, suggestions = [], placeholder }: Tag
             anadir(texto)
           }
         }}
+        onBlur={() => anadir(texto)}
       />
       {sugerenciasFiltradas.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -68,6 +69,7 @@ export function TagInput({ value, onChange, suggestions = [], placeholder }: Tag
             <button
               key={s}
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => anadir(s)}
               className="rounded-field border border-border px-3 py-1.5 text-caption text-text-secondary"
             >

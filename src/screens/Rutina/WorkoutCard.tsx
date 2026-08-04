@@ -29,7 +29,7 @@ export function WorkoutCard({
         <div className="flex flex-col gap-1">
           <span className="text-heading text-text">{workout.name}</span>
           {workout.materials.length > 0 && (
-            <span className="text-caption text-text-secondary">{workout.materials.join(' · ')}</span>
+            <span className="text-caption text-text-secondary">Materiales: {workout.materials.join(' · ')}</span>
           )}
           {sesionSinTerminar && <span className="text-caption text-text-secondary">Sesión sin terminar</span>}
         </div>
