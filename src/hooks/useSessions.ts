@@ -2,7 +2,6 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { recalcularPR, recalcularPRDeVarios } from '../db/personalRecordSync'
 import { db } from '../db/schema'
 import type { Session, SessionSet, Workout, WorkoutExercise } from '../db/types'
-import { avanzarVariante } from '../domain/variant'
 
 export function useUnfinishedSession(workoutId: string | undefined): Session | null | undefined {
   return useLiveQuery(async () => {
@@ -218,13 +217,9 @@ export async function resumenSeriesSinRevisar(sessionId: string): Promise<{ tota
 
 /**
  * Termina la sesion: opcionalmente descarta las series sin revisar, recalcula el PR de los
- * ejercicios afectados y avanza el ciclo de variantes de la rutina. Ver DATA_MODEL.md.
+ * ejercicios afectados. La variante no depende de las sesiones: cambia sola cada lunes.
  */
-export async function terminarSesion(
-  sessionId: string,
-  workoutId: string,
-  descartarSinRevisar: boolean,
-): Promise<void> {
+export async function terminarSesion(sessionId: string, descartarSinRevisar: boolean): Promise<void> {
   const session = await db.sessions.get(sessionId)
   if (!session) return
 
@@ -241,30 +236,4 @@ export async function terminarSesion(
 
   const setsFinales = await db.sessionSets.where('sessionId').equals(sessionId).toArray()
   await recalcularPRDeVarios(setsFinales.map((s) => s.exerciseId))
-
-  const routine = await db.routines.get(session.routineId)
-  if (routine && routine.variantCount > 1) {
-    const workoutIdsDeVariante = (
-      await db.workouts
-        .where('[routineId+variantIndex]')
-        .equals([routine.id, routine.currentVariantIndex])
-        .toArray()
-    ).map((w) => w.id)
-
-    const nuevoEstado = avanzarVariante(
-      {
-        variantCount: routine.variantCount,
-        currentVariantIndex: routine.currentVariantIndex,
-        cycleCompletedWorkoutIds: routine.cycleCompletedWorkoutIds,
-        manualVariantIndex: routine.manualVariantIndex,
-      },
-      workoutId,
-      workoutIdsDeVariante,
-    )
-    await db.routines.update(routine.id, {
-      currentVariantIndex: nuevoEstado.currentVariantIndex,
-      cycleCompletedWorkoutIds: nuevoEstado.cycleCompletedWorkoutIds,
-      manualVariantIndex: nuevoEstado.manualVariantIndex,
-    })
-  }
 }

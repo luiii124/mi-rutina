@@ -49,9 +49,8 @@ BD: **IndexedDB** vía **Dexie.js**. Todo local, en el dispositivo.
 | `name` | `string` | |
 | `variantCount` | `1\|2\|3\|4` | `1` = sin variantes |
 | `variantNames` | `string[]` | longitud = `variantCount`, por defecto `["A","B",...]` |
-| `currentVariantIndex` | `number` | 0-based, variante **sugerida** |
-| `manualVariantIndex` | `number \| null` | fijada a mano; `null` = automático |
-| `cycleCompletedWorkoutIds` | `string[]` | entrenos ya hechos del ciclo actual |
+| `variantAnchorWeek` | `string` | lunes `YYYY-MM-DD` de la semana de referencia |
+| `variantAnchorIndex` | `number` | 0-based, variante que toca en `variantAnchorWeek` |
 | `createdAt` / `updatedAt` | `number` | |
 | `archivedAt` | `number \| null` | "terminar" rutina sin borrarla |
 
@@ -194,32 +193,28 @@ estaFueraDeRango(reps, repMin, repMax):
 
 Toda la interfaz llama a **esta única función**. Cambiar la política es modificar solo esto.
 
-### Avance automático de variante
+### Variante de la semana
 
-Solo si `routine.variantCount > 1`.
+Solo si `routine.variantCount > 1`. La variante cambia sola **cada lunes**, en orden
+(A, B, A, B... o A, B, C, A...), por semana natural, se entrene o no.
 
 ```
-alCompletarSesión(sesión):
-    rutina = rutina de la sesión
-    si rutina.variantCount == 1 → salir
-    si sesión.workoutId no está en cycleCompletedWorkoutIds → añadirlo
-    entrenosDeLaVariante = entrenos con variantIndex == currentVariantIndex
-    si todos sus ids están en cycleCompletedWorkoutIds:
-        currentVariantIndex = (currentVariantIndex + 1) % variantCount
-        cycleCompletedWorkoutIds = []
-        manualVariantIndex = null
+varianteDeLaSemana(rutina, hoy):
+    semanas = semanas entre variantAnchorWeek y el lunes de la semana de hoy
+    devolver (variantAnchorIndex + semanas) mod variantCount   // mod siempre positivo
 ```
 
-Variante mostrada = `manualVariantIndex ?? currentVariantIndex`. Elegir una a mano fija
-`manualVariantIndex` y muestra "Has cambiado la variante a mano"; "Volver a la sugerida" lo
-pone a `null`.
+**Corrección a mano:** elegir otra variante en el selector de la rutina mueve el ancla a la
+semana actual (`variantAnchorWeek = lunes de hoy`, `variantAnchorIndex = elegida`). Esa semana
+pasa a ser la elegida y las siguientes siguen el orden desde ahí (sirve para recolocar tras
+vacaciones). Cambiar solo el nombre de la rutina no toca el ancla; cambiar el número de
+variantes reancla en la semana actual conservando la variante actual si sigue existiendo.
 
-**Por qué por entrenos y no por fechas:** contar semanas naturales se desincroniza en cuanto se
-descansa una semana, hay viaje o se entrena en desorden (lo normal). Contar entrenos
-completados sigue el ritmo real.
-
-**Caso límite:** añadir un entreno nuevo a la variante en curso cuando el ciclo casi había
-cerrado deja ese entreno pendiente y el ciclo tarda más en cerrar — es correcto.
+**Historia:** hasta nov. 2026 se avanzaba al completar todos los entrenos de la variante. Se
+cambió a semanas naturales a petición del usuario porque en la práctica no acertaba (bastaba con
+saltarse un entreno o hacer uno de la otra variante para que el ciclo no cerrase). Las rutinas
+antiguas se migran (`db/migrations.ts`, Dexie v2 y al importar copias viejas): la semana de la
+migración se queda con la variante que se estaba mostrando.
 
 ### Precarga de la sesión anterior
 

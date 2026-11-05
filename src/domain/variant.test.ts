@@ -1,63 +1,70 @@
 import { describe, expect, it } from 'vitest'
-import { avanzarVariante, varianteMostrada, type RoutineVariantState } from './variant'
+import { anclarEstaSemana, lunesDeLaSemana, semanasEntre, varianteDeLaSemana } from './variant'
 
-function estado(overrides: Partial<RoutineVariantState>): RoutineVariantState {
-  return {
-    variantCount: 2,
-    currentVariantIndex: 0,
-    cycleCompletedWorkoutIds: [],
-    manualVariantIndex: null,
-    ...overrides,
-  }
-}
-
-describe('avanzarVariante', () => {
-  it('sin variantes no cambia nada', () => {
-    const e = estado({ variantCount: 1 })
-    expect(avanzarVariante(e, 'w1', ['w1', 'w2'])).toBe(e)
+// Meses en Date son 0-based: new Date(2026, 10, 5) = 5 nov 2026 (jueves).
+describe('lunesDeLaSemana', () => {
+  it('devuelve el lunes de la misma semana', () => {
+    expect(lunesDeLaSemana(new Date(2026, 10, 5))).toBe('2026-11-02')
   })
 
-  it('anota el entreno completado sin cerrar el ciclo si faltan otros', () => {
-    const e = estado({})
-    const resultado = avanzarVariante(e, 'w1', ['w1', 'w2'])
-    expect(resultado.cycleCompletedWorkoutIds).toEqual(['w1'])
-    expect(resultado.currentVariantIndex).toBe(0)
+  it('el lunes es su propio lunes', () => {
+    expect(lunesDeLaSemana(new Date(2026, 10, 2, 0, 5))).toBe('2026-11-02')
   })
 
-  it('avanza de variante y reinicia el ciclo cuando se completan todos los entrenos', () => {
-    const e = estado({ cycleCompletedWorkoutIds: ['w1'] })
-    const resultado = avanzarVariante(e, 'w2', ['w1', 'w2'])
-    expect(resultado.currentVariantIndex).toBe(1)
-    expect(resultado.cycleCompletedWorkoutIds).toEqual([])
-    expect(resultado.manualVariantIndex).toBeNull()
+  it('el domingo pertenece a la semana que empezo el lunes anterior', () => {
+    expect(lunesDeLaSemana(new Date(2026, 10, 8, 23, 59))).toBe('2026-11-02')
   })
 
-  it('da la vuelta al llegar a la ultima variante', () => {
-    const e = estado({ variantCount: 3, currentVariantIndex: 2, cycleCompletedWorkoutIds: ['w1'] })
-    const resultado = avanzarVariante(e, 'w2', ['w1', 'w2'])
-    expect(resultado.currentVariantIndex).toBe(0)
-  })
-
-  it('un entreno nuevo anadido a mitad de ciclo no cierra el ciclo antes de tiempo', () => {
-    const e = estado({ cycleCompletedWorkoutIds: ['w1', 'w2'] })
-    const resultado = avanzarVariante(e, 'w1', ['w1', 'w2', 'w3'])
-    expect(resultado.currentVariantIndex).toBe(0)
-    expect(resultado.cycleCompletedWorkoutIds).toEqual(['w1', 'w2'])
-  })
-
-  it('no duplica un entreno ya marcado como completado', () => {
-    const e = estado({ cycleCompletedWorkoutIds: ['w1'] })
-    const resultado = avanzarVariante(e, 'w1', ['w1', 'w2'])
-    expect(resultado.cycleCompletedWorkoutIds).toEqual(['w1'])
+  it('cruza cambio de mes y de año', () => {
+    expect(lunesDeLaSemana(new Date(2027, 0, 1))).toBe('2026-12-28')
   })
 })
 
-describe('varianteMostrada', () => {
-  it('usa la sugerida si no hay eleccion manual', () => {
-    expect(varianteMostrada({ currentVariantIndex: 1, manualVariantIndex: null })).toBe(1)
+describe('semanasEntre', () => {
+  it('cuenta semanas hacia delante y hacia atras', () => {
+    expect(semanasEntre('2026-11-02', '2026-11-16')).toBe(2)
+    expect(semanasEntre('2026-11-16', '2026-11-02')).toBe(-2)
   })
 
-  it('usa la manual si el usuario la fijo', () => {
-    expect(varianteMostrada({ currentVariantIndex: 1, manualVariantIndex: 0 })).toBe(0)
+  it('no se descuadra con el cambio de hora de octubre', () => {
+    expect(semanasEntre('2026-10-19', '2026-11-02')).toBe(2)
+  })
+})
+
+describe('varianteDeLaSemana', () => {
+  const ancla = { variantCount: 2, variantAnchorWeek: '2026-11-02', variantAnchorIndex: 0 }
+
+  it('sin variantes siempre es la 0', () => {
+    expect(varianteDeLaSemana({ ...ancla, variantCount: 1, variantAnchorIndex: 0 }, new Date(2026, 11, 1))).toBe(0)
+  })
+
+  it('alterna A-B-A cada lunes', () => {
+    expect(varianteDeLaSemana(ancla, new Date(2026, 10, 8))).toBe(0) // domingo, misma semana
+    expect(varianteDeLaSemana(ancla, new Date(2026, 10, 9))).toBe(1) // lunes siguiente
+    expect(varianteDeLaSemana(ancla, new Date(2026, 10, 16))).toBe(0)
+  })
+
+  it('con 3 variantes recorre A-B-C-A', () => {
+    const a3 = { ...ancla, variantCount: 3 }
+    expect(varianteDeLaSemana(a3, new Date(2026, 10, 9))).toBe(1)
+    expect(varianteDeLaSemana(a3, new Date(2026, 10, 16))).toBe(2)
+    expect(varianteDeLaSemana(a3, new Date(2026, 10, 23))).toBe(0)
+  })
+
+  it('funciona con semanas anteriores al ancla', () => {
+    expect(varianteDeLaSemana(ancla, new Date(2026, 9, 28))).toBe(1)
+  })
+
+  it('sigue alternando aunque no se entrene (semanas naturales)', () => {
+    expect(varianteDeLaSemana(ancla, new Date(2027, 0, 4))).toBe(1) // 9 semanas despues
+  })
+})
+
+describe('anclarEstaSemana', () => {
+  it('elegir B a mano hace B esta semana y A la siguiente', () => {
+    const hoy = new Date(2026, 10, 5)
+    const nueva = { variantCount: 2, ...anclarEstaSemana(1, hoy) }
+    expect(varianteDeLaSemana(nueva, hoy)).toBe(1)
+    expect(varianteDeLaSemana(nueva, new Date(2026, 10, 9))).toBe(0)
   })
 })

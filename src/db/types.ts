@@ -23,9 +23,10 @@ export interface Routine {
   name: string
   variantCount: 1 | 2 | 3 | 4
   variantNames: string[]
-  currentVariantIndex: number
-  manualVariantIndex: number | null
-  cycleCompletedWorkoutIds: string[]
+  /** Lunes (YYYY-MM-DD) de la semana de referencia. Ver domain/variant.ts. */
+  variantAnchorWeek: string
+  /** Variante que toca en la semana `variantAnchorWeek`; las demas se deducen contando semanas. */
+  variantAnchorIndex: number
   createdAt: number
   updatedAt: number
   archivedAt: number | null

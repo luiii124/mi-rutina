@@ -7,8 +7,8 @@ import { EmptyState } from '../../components/EmptyState'
 import { SegmentedControl } from '../../components/SegmentedControl'
 import { SortableList } from '../../components/SortableList'
 import { formatearFechaCorta } from '../../domain/dates'
-import { varianteMostrada } from '../../domain/variant'
-import { clearManualVariant, setManualVariant, useRoutine } from '../../hooks/useRoutines'
+import { varianteDeLaSemana } from '../../domain/variant'
+import { elegirVarianteDeEstaSemana, useRoutine } from '../../hooks/useRoutines'
 import {
   copiarEntrenosDeVariante,
   deleteWorkout,
@@ -25,18 +25,13 @@ export function Rutina() {
   const [eliminando, setEliminando] = useState<string | null>(null)
   const [duplicando, setDuplicando] = useState<string | null>(null)
 
-  const variantIndex = routine
-    ? varianteMostrada({
-        currentVariantIndex: routine.currentVariantIndex,
-        manualVariantIndex: routine.manualVariantIndex,
-      })
-    : 0
+  const variantIndex = routine ? varianteDeLaSemana(routine) : 0
 
   const items = useWorkouts(routineId ?? '', variantIndex)
 
   if (!routine || !routineId) return null
 
-  const esManual = routine.manualVariantIndex !== null
+  const siguienteSemana = (variantIndex + 1) % routine.variantCount
 
   return (
     <div className="flex flex-col gap-6 px-4 py-8 pb-12">
@@ -56,23 +51,10 @@ export function Rutina() {
             <SegmentedControl
               options={routine.variantNames.map((name, i) => ({ value: String(i), label: name }))}
               value={String(variantIndex)}
-              onChange={(v) => setManualVariant(routineId, Number(v))}
+              onChange={(v) => elegirVarianteDeEstaSemana(routineId, Number(v))}
             />
             <p className="text-caption text-text-secondary">
-              {esManual ? (
-                <>
-                  Has cambiado la variante a mano ·{' '}
-                  <button
-                    type="button"
-                    className="underline"
-                    onClick={() => clearManualVariant(routineId)}
-                  >
-                    Volver a la sugerida
-                  </button>
-                </>
-              ) : (
-                `Variante sugerida: ${routine.variantNames[routine.currentVariantIndex]}`
-              )}
+              Cambia sola cada lunes · La próxima semana: {routine.variantNames[siguienteSemana]}
             </p>
           </>
         )}

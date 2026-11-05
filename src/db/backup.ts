@@ -1,3 +1,4 @@
+import { rutinaConAnclaSemanal } from './migrations'
 import { db } from './schema'
 import { seedBuiltInExercises } from './seed'
 import type {
@@ -210,7 +211,7 @@ export async function importarCopia(backup: BackupFile): Promise<void> {
 
       if (backup.settings) await db.settings.put(backup.settings)
       await db.exercises.bulkAdd(backup.exercises)
-      await db.routines.bulkAdd(backup.routines)
+      await db.routines.bulkAdd(backup.routines.map(rutinaConAnclaSemanal))
       await db.workouts.bulkAdd(backup.workouts)
       await db.workoutExercises.bulkAdd(backup.workoutExercises)
       await db.sessions.bulkAdd(backup.sessions)

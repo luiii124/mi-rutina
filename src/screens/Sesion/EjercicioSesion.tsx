@@ -224,7 +224,7 @@ export function EjercicioSesion() {
         setConfirmandoRevision(true)
         return
       }
-      await terminarSesion(sessionId, workoutId, false)
+      await terminarSesion(sessionId, false)
       navigate(`/entrenos/${workoutId}`)
     } finally {
       setTerminando(false)
@@ -235,7 +235,7 @@ export function EjercicioSesion() {
     if (!sessionId || !workoutId) return
     setTerminando(true)
     try {
-      await terminarSesion(sessionId, workoutId, descartar)
+      await terminarSesion(sessionId, descartar)
       navigate(`/entrenos/${workoutId}`)
     } finally {
       setTerminando(false)
@@ -346,6 +346,7 @@ export function EjercicioSesion() {
               {rango && <span className="text-caption text-text-secondary">Objetivo: {rango}</span>}
             </div>
             <SerieCampos
+              key={serieActual.id}
               set={serieActual}
               unit={unit}
               repMin={workoutExercise.repMin}
@@ -480,11 +481,36 @@ function SerieCampos({
 }) {
   const [peso, setPeso] = useState('')
   const [reps, setReps] = useState('')
+  // Copia de lo escrito y si falta por guardar. Hace falta porque en iPhone pulsar "Descanso" o
+  // "Siguiente serie" con el teclado abierto no dispara onBlur: el campo desaparece de pantalla
+  // y, si solo se guardase al salir del campo, lo escrito se perdia sin avisar.
+  const escritoRef = useRef({ peso: '', reps: '' })
+  const sinGuardarRef = useRef(false)
+  const guardarRef = useRef<(pesoTexto: string, repsTexto: string) => void>(() => {})
 
   useEffect(() => {
-    setPeso(set.weightKg !== null ? String(formatWeightForDisplay(set.weightKg, unit)) : '')
-    setReps(set.reps !== null ? String(set.reps) : '')
+    if (sinGuardarRef.current) return
+    const p = set.weightKg !== null ? String(formatWeightForDisplay(set.weightKg, unit)) : ''
+    const r = set.reps !== null ? String(set.reps) : ''
+    setPeso(p)
+    setReps(r)
+    escritoRef.current = { peso: p, reps: r }
   }, [set.id, set.weightKg, set.reps, unit])
+
+  useEffect(() => {
+    function guardarPendiente() {
+      if (!sinGuardarRef.current) return
+      guardarRef.current(escritoRef.current.peso, escritoRef.current.reps)
+    }
+    function alOcultar() {
+      if (document.visibilityState === 'hidden') guardarPendiente()
+    }
+    document.addEventListener('visibilitychange', alOcultar)
+    return () => {
+      document.removeEventListener('visibilitychange', alOcultar)
+      guardarPendiente()
+    }
+  }, [])
 
   // Se calcula sobre lo que hay escrito en el campo, no sobre el ultimo valor guardado: si no,
   // el numero no se pinta de rojo hasta salir del campo (cuando se guarda de verdad).
@@ -496,12 +522,26 @@ function SerieCampos({
   )
 
   function guardar(pesoTexto: string, repsTexto: string) {
+    sinGuardarRef.current = false
     const pesoNum = pesoTexto.trim() ? Number(pesoTexto.replace(',', '.')) : null
     const repsNum = repsTexto.trim() ? Number(repsTexto.replace(',', '.')) : null
     void actualizarSerie(set.id, {
       weightKg: pesoNum !== null && !Number.isNaN(pesoNum) ? parseWeightInput(pesoNum, unit) : null,
       reps: repsNum !== null && !Number.isNaN(repsNum) ? Math.round(repsNum) : null,
     })
+  }
+  guardarRef.current = guardar
+
+  function cambiarPeso(valor: string) {
+    setPeso(valor)
+    escritoRef.current = { ...escritoRef.current, peso: valor }
+    sinGuardarRef.current = true
+  }
+
+  function cambiarReps(valor: string) {
+    setReps(valor)
+    escritoRef.current = { ...escritoRef.current, reps: valor }
+    sinGuardarRef.current = true
   }
 
   return (
@@ -514,7 +554,7 @@ function SerieCampos({
           className={`${fieldClass} h-16 text-center text-numeric ${set.isPrefilled ? 'text-text-tertiary' : 'text-text'}`}
           value={peso}
           onFocus={() => set.isPrefilled && void marcarSerieComoRevisada(set.id)}
-          onChange={(e) => setPeso(e.target.value)}
+          onChange={(e) => cambiarPeso(e.target.value)}
           onBlur={() => guardar(peso, reps)}
         />
       </div>
@@ -528,7 +568,7 @@ function SerieCampos({
           }`}
           value={reps}
           onFocus={() => set.isPrefilled && void marcarSerieComoRevisada(set.id)}
-          onChange={(e) => setReps(e.target.value)}
+          onChange={(e) => cambiarReps(e.target.value)}
           onBlur={() => guardar(peso, reps)}
         />
       </div>

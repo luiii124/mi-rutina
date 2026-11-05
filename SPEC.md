@@ -90,9 +90,10 @@ entreno.
 **Cabecera:**
 
 - Nombre de la rutina.
-- Si tiene variantes: selector de segmentos (A/B/...), activa resaltada. Debajo, gris:
-  "Variante sugerida: B"; si el usuario la cambió a mano, "Has cambiado la variante a mano ·
-  Volver a la sugerida" (parte final pulsable).
+- Si tiene variantes: selector de segmentos (A/B/...) con la variante de esta semana
+  resaltada; cambia sola cada lunes. Debajo, gris: "Cambia sola cada lunes · La próxima
+  semana: A". Elegir otra a mano la fija para esta semana y las siguientes siguen el orden
+  desde ahí.
 - Gris: "Creada el 12 mar 2026".
 
 **Lista de entrenos** (de la variante seleccionada, orden del usuario). Cada tarjeta: nombre

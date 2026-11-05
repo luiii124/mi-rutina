@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { SwipeActions, type SwipeAction } from '../../components/SwipeActions'
 import { formatearFechaCorta, formatearFechaRelativa } from '../../domain/dates'
+import { varianteDeLaSemana } from '../../domain/variant'
 import type { Routine } from '../../db/types'
 
 interface RoutineCardProps {
@@ -45,7 +46,7 @@ export function RoutineCard({
           </span>
           {routine.variantCount > 1 && (
             <span className="shrink-0 rounded-field bg-surface-raised px-2.5 py-1 text-caption text-text-secondary">
-              {routine.variantNames[routine.manualVariantIndex ?? routine.currentVariantIndex]}
+              {routine.variantNames[varianteDeLaSemana(routine)]}
             </span>
           )}
         </div>

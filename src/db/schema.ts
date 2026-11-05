@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie'
+import { rutinaConAnclaSemanal } from './migrations'
 import type {
   BodyEntry,
   Exercise,
@@ -42,6 +43,15 @@ export class MiRutinaDB extends Dexie {
       personalRecords: 'exerciseId',
       importSnapshots: '++id, createdAt',
     })
+    // v2: las variantes pasan a cambiar por semana natural. Mismos índices; solo convierte datos.
+    this.version(2).upgrade((tx) =>
+      tx
+        .table('routines')
+        .toCollection()
+        .modify((routine: Record<string, unknown>, ref: { value: unknown }) => {
+          ref.value = rutinaConAnclaSemanal(routine)
+        }),
+    )
   }
 }
 

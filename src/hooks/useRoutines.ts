@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { recalcularPRDeVarios } from '../db/personalRecordSync'
 import { db } from '../db/schema'
 import type { Routine } from '../db/types'
+import { anclarEstaSemana, varianteDeLaSemana } from '../domain/variant'
 
 const VARIANT_LETTERS = ['A', 'B', 'C', 'D']
 
@@ -79,9 +80,7 @@ export async function createRoutine(name: string, variantCount: 1 | 2 | 3 | 4): 
     name,
     variantCount,
     variantNames: VARIANT_LETTERS.slice(0, variantCount),
-    currentVariantIndex: 0,
-    manualVariantIndex: null,
-    cycleCompletedWorkoutIds: [],
+    ...anclarEstaSemana(0),
     createdAt: now,
     updatedAt: now,
     archivedAt: null,
@@ -113,23 +112,22 @@ export async function updateRoutine(routineId: string, input: UpdateRoutineInput
     await db.workouts.bulkDelete(workoutIds)
   }
 
+  // Cambiar solo el nombre no toca el orden de las semanas. Si cambia el numero de variantes,
+  // esta semana conserva la suya (o pasa a la A, si esa variante ha desaparecido).
+  const cambiaNumero = input.variantCount !== routine.variantCount
+  const actual = varianteDeLaSemana(routine)
   await db.routines.update(routineId, {
     name: input.name,
     variantCount: input.variantCount,
     variantNames: input.variantNames,
-    currentVariantIndex: 0,
-    manualVariantIndex: null,
-    cycleCompletedWorkoutIds: [],
+    ...(cambiaNumero ? anclarEstaSemana(actual < input.variantCount ? actual : 0) : {}),
     updatedAt: Date.now(),
   })
 }
 
-export async function setManualVariant(routineId: string, variantIndex: number): Promise<void> {
-  await db.routines.update(routineId, { manualVariantIndex: variantIndex })
-}
-
-export async function clearManualVariant(routineId: string): Promise<void> {
-  await db.routines.update(routineId, { manualVariantIndex: null })
+/** Elegir variante a mano: esta semana pasa a ser esa y las siguientes siguen el orden desde ahi. */
+export async function elegirVarianteDeEstaSemana(routineId: string, variantIndex: number): Promise<void> {
+  await db.routines.update(routineId, { ...anclarEstaSemana(variantIndex), updatedAt: Date.now() })
 }
 
 export async function archiveRoutine(routineId: string): Promise<void> {
@@ -152,9 +150,6 @@ export async function duplicateRoutine(routineId: string): Promise<string> {
     ...original,
     id: newRoutineId,
     name: `${original.name} (copia)`,
-    currentVariantIndex: 0,
-    manualVariantIndex: null,
-    cycleCompletedWorkoutIds: [],
     createdAt: now,
     updatedAt: now,
     archivedAt: null,
