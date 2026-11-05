@@ -10,6 +10,7 @@ import { estaFueraDeRango } from '../../domain/repRange'
 import { formatearTiempo } from '../../domain/timer'
 import { formatWeightForDisplay, parseWeightInput } from '../../domain/units'
 import { borrarDescansoGuardado, guardarDescanso, leerDescansoGuardado } from '../../lib/restTimerStorage'
+import { pasosHastaElEntreno } from '../../lib/sessionReturn'
 import { prepararSonido, reproducirTonoFinDescanso } from '../../lib/sound'
 import { usePersonalRecord } from '../../hooks/useHistory'
 import { usePhoto } from '../../hooks/usePhotos'
@@ -225,10 +226,18 @@ export function EjercicioSesion() {
         return
       }
       await terminarSesion(sessionId, false)
-      navigate(`/entrenos/${workoutId}`)
+      volverAlEntreno()
     } finally {
       setTerminando(false)
     }
+  }
+
+  /** Retrocede en el historial hasta el entreno; ver lib/sessionReturn.ts. */
+  function volverAlEntreno() {
+    if (!sessionId || !workoutId) return
+    const pasos = pasosHastaElEntreno(sessionId)
+    if (pasos !== null) navigate(pasos)
+    else navigate(`/entrenos/${workoutId}`, { replace: true })
   }
 
   async function resolverRevision(descartar: boolean) {
@@ -236,7 +245,7 @@ export function EjercicioSesion() {
     setTerminando(true)
     try {
       await terminarSesion(sessionId, descartar)
-      navigate(`/entrenos/${workoutId}`)
+      volverAlEntreno()
     } finally {
       setTerminando(false)
       setConfirmandoRevision(false)
@@ -267,9 +276,9 @@ export function EjercicioSesion() {
               Ejercicio {index + 1} de {items.length}
             </span>
           </div>
-          <Link to={`/entrenos/${workoutId}`} className="text-caption text-text-secondary">
+          <button type="button" onClick={volverAlEntreno} className="text-caption text-text-secondary">
             Salir
-          </Link>
+          </button>
         </div>
 
         <div className="flex items-center justify-between gap-2">

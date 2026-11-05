@@ -18,6 +18,7 @@ import {
   useUnfinishedSession,
 } from '../../hooks/useSessions'
 import { usePhoto } from '../../hooks/usePhotos'
+import { recordarPosicionDelEntreno } from '../../lib/sessionReturn'
 import { useWorkout } from '../../hooks/useWorkouts'
 import {
   removeWorkoutExercise,
@@ -50,7 +51,10 @@ export function Entreno() {
     try {
       const sessionId = await iniciarOContinuarSesion(workout)
       const primerId = await primerEjercicioPendiente(sessionId, workout.id)
-      if (primerId) navigate(`/entrenos/${workout.id}/sesion/${sessionId}/${primerId}`)
+      if (primerId) {
+        recordarPosicionDelEntreno(sessionId)
+        navigate(`/entrenos/${workout.id}/sesion/${sessionId}/${primerId}`)
+      }
     } finally {
       setEmpezando(false)
     }
